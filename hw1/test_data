@@ -1,0 +1,21 @@
+// print hello world
+//S+
+begin
+ var a : integer;
+ var b : real;
+ var c : integer;
+ print "hello world";
+ a := 1+1;
+ b := 1.23;
+ c := 0x123;
+ if a > 01 then
+  b := b*1.23e-1;
+ end if
+/*
+ yee
+ if a > 01 then
+ end if
+ 123
+ 456
+*/
+end
