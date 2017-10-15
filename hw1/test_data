@@ -4,12 +4,14 @@ begin
  var a : integer;
  var b : real;
  var c : integer;
- print "hello world";
+ print "hello 
+ world";
  a := 1+1;
  b := 1.23;
  c := 0x123;
  if a > 01 then
-  b := b*1.23e-1;
+ b := b*1.23e-1;
+ 1212E+123213E121212
  end if
 /*
  yee

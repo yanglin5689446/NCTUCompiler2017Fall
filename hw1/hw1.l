@@ -14,6 +14,7 @@ char buf[MAX_LINE_LENG];
 char buf2[MAX_LINE_LENG];
 %}
 
+%x STRING
 %x INLINE_COMMENT
 %x MULTILINE_COMMENT
 
@@ -46,6 +47,11 @@ char buf2[MAX_LINE_LENG];
                         }
 <MULTILINE_COMMENT>.    { LIST; }
 <MULTILINE_COMMENT>\*\/ { LIST; BEGIN INITIAL;}
+<INITIAL>\"                    { LIST; memset(buf2, 0, sizeof(buf2)); BEGIN STRING;}
+<STRING>\n                     { printf("Error: newline in string constant\n"); return 1;}
+<STRING>\"\"                   { LIST; strcat(buf2, "\""); }
+<STRING>\"                     { LIST; tokenString(string, buf2); BEGIN INITIAL; }
+<STRING>.                      { LIST; strcat(buf2, yytext);}
 ^[ ]*       { ; }
 array		{ tokenKeyword(yytext); }
 begin		{ tokenKeyword(yytext); }
@@ -93,17 +99,12 @@ not  { token(yytext); }
 \[	{ token(yytext); }
 \]	{ token(yytext); }
 
-\".+\"                          { 
-                                    strcat(buf2, yytext);
-                                    buf2[yyleng-1]='\0';
-                                    tokenString(string, buf2+1); 
-                                }
+[0-9]*\.[0-9]+([eE][\+-][0-9]+) { tokenString(scientific, yytext); }
 [1-9][0-9]*                     { tokenString(integer, yytext); }
 0[0-9]*                         { tokenString(oct_integer, yytext); }
 0[xX][0-9]*                     { tokenString(hex_integer, yytext); }
-[0-9]*\.[0-9]+(e[\+-][0-9]+)    { tokenString(scientific, yytext); }
 [0-9]*\.[0-9]+                  { tokenString(float, yytext); }
-[a-zA-Z_][a-zA-Z0-9_]*            { tokenString(id, yytext); }
+[a-zA-Z_][a-zA-Z0-9_]*          { tokenString(id, yytext); }
 \n          {
               LIST;
               if (Opt_S)
