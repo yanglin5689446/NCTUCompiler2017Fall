@@ -1,5 +1,5 @@
 // print hello world
-//S+
+//&S-&S+
 begin
  var a : integer;
  var b : real;

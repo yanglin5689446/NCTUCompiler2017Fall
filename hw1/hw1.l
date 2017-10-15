@@ -9,29 +9,43 @@
 
 int Opt_S = 1;
 int Opt_T = 1;
-int Opt_T_bk = 1;
 int linenum = 1;
 char buf[MAX_LINE_LENG];
 char buf2[MAX_LINE_LENG];
 %}
 
-%x COMMENT
+%x INLINE_COMMENT
+%x MULTILINE_COMMENT
 
 %%
-\/\/(&[ST][+-])*\n    { 
-              LIST;
-              if (Opt_S)printf("%d: %s", linenum, buf);
-              linenum++;
-              buf[0] = '\0';
-            }
-\/\/.*\n    { 
-              LIST;
-              if (Opt_S)printf("%d: %s", linenum, buf);
-              linenum++;
-              buf[0] = '\0';
-            }
-\/\*        { LIST; Opt_T_bk= Opt_T;Opt_T = 0; }
-\*\/        { LIST; Opt_T = Opt_T_bk; }
+"//"        { LIST; BEGIN INLINE_COMMENT; }
+"/*"        { LIST; BEGIN MULTILINE_COMMENT; }
+<INLINE_COMMENT>\&[ST][+-]   { 
+                                LIST; 
+                                if(yytext[1] == 'S' && yytext[2] == '+')Opt_S = 1;
+                                else if(yytext[1] == 'S' && yytext[2] == '-')Opt_S = 0;
+                                else if(yytext[1] == 'T' && yytext[2] == '+')Opt_T = 1;
+                                else if(yytext[1] == 'T' && yytext[2] == '-')Opt_T = 0;
+                            }
+<INLINE_COMMENT>.       { LIST; }
+<INLINE_COMMENT>\n      { 
+                          LIST; 
+                          BEGIN INITIAL;
+                          if (Opt_S)
+                            printf("%d: %s", linenum, buf);
+                          linenum++;
+                          buf[0] = '\0';
+                        }
+<MULTILINE_COMMENT>\n      { 
+                          LIST; 
+                          BEGIN INITIAL;
+                          if (Opt_S)
+                            printf("%d: %s", linenum, buf);
+                          linenum++;
+                          buf[0] = '\0';
+                        }
+<MULTILINE_COMMENT>.    { LIST; }
+<MULTILINE_COMMENT>\*\/ { LIST; BEGIN INITIAL;}
 ^[ ]*       { ; }
 array		{ tokenKeyword(yytext); }
 begin		{ tokenKeyword(yytext); }
