@@ -1,11 +1,14 @@
 // print hello world
-//&S-&S+
+//&S-
+//121123123214
+//21412412421
+//124
+//&S+
 begin
  var a : integer;
  var b : real;
  var c : integer;
- print "hello 
- world";
+ print "hello world";
  a := 1+1;
  b := 1.23;
  c := 0x123;

@@ -52,7 +52,6 @@ char buf2[MAX_LINE_LENG];
 <STRING>\"\"                   { LIST; strcat(buf2, "\""); }
 <STRING>\"                     { LIST; tokenString(string, buf2); BEGIN INITIAL; }
 <STRING>.                      { LIST; strcat(buf2, yytext);}
-^[ ]*       { ; }
 array		{ tokenKeyword(yytext); }
 begin		{ tokenKeyword(yytext); }
 boolean		{ tokenKeyword(yytext); }
@@ -82,6 +81,7 @@ while		{ tokenKeyword(yytext); }
 "=="  { token(yytext); }
 ">"  { token(yytext); }
 "<"  { token(yytext); }
+"<>"  { token(yytext); }
 "="  { token(yytext); }
 \+	{ token(yytext); }
 \-	{ token(yytext); }
@@ -112,7 +112,8 @@ not  { token(yytext); }
               linenum++;
               buf[0] = '\0';
             }
-.           { LIST; }
+[ \t]       { LIST; }
+.           { printf("Errpe: No Rule matched.\n"); return 1; }
 %%
 int main( int argc, char **argv )
 {
