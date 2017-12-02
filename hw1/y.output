@@ -1,0 +1,2070 @@
+Terminals unused in grammar
+
+   DEF
+
+
+State 58 conflicts: 1 shift/reduce
+State 80 conflicts: 1 reduce/reduce
+State 101 conflicts: 1 shift/reduce
+State 154 conflicts: 1 shift/reduce
+
+
+Grammar
+
+    0 $accept: program $end
+
+    1 epsilon: %empty
+
+    2 program: ID ';' program_body _END ID
+
+    3 program_body: var_declars func_declars compound_statement
+
+    4 type: INTEGER
+    5     | REAL
+    6     | STRING
+    7     | BOOLEAN
+
+    8 constants: constant constants
+    9          | epsilon
+
+   10 constant: CONSTANT_INT
+   11         | CONSTANT_REAL
+   12         | CONSTANT_STRING
+   13         | TRUE
+   14         | FALSE
+
+   15 var_declars: var_declar var_declars
+   16            | epsilon
+
+   17 var_declar: VAR identifiers ':' declar_type ';'
+
+   18 declar_type: constants
+   19            | type
+   20            | ARRAY CONSTANT_INT TO CONSTANT_INT OF declar_type
+
+   21 func_declars: func_declar func_declars
+   22             | epsilon
+
+   23 func_declar: ID '(' arguments ')' func_type ';' compound_statement _END ID
+
+   24 arguments: argument arguments
+   25          | ',' argument arguments
+   26          | epsilon
+
+   27 argument: identifiers ':' type
+
+   28 func_type: ':' type
+   29          | epsilon
+
+   30 identifiers: ID identifiers
+   31            | ',' ID identifiers
+   32            | epsilon
+
+   33 compound_statement: _BEGIN var_declars statements _END
+
+   34 statements: statement statements
+   35           | epsilon
+
+   36 statement: read ';'
+   37          | print ';'
+   38          | assignment ';'
+   39          | return ';'
+   40          | function_call ';'
+   41          | compound_statement
+   42          | flow
+
+   43 read: READ var
+
+   44 print: PRINT expr
+   45      | PRINT CONSTANT_STRING
+
+   46 assignment: var ASSIGN expr
+
+   47 return: RETURN expr
+   48       | RETURN
+
+   49 var: ID var_
+
+   50 var_: '[' expr ']' var_
+   51     | epsilon
+
+   52 function_call: ID '(' exprs ')'
+
+   53 exprs: expr exprs
+   54      | ',' expr exprs
+   55      | epsilon
+
+   56 expr: operand expr_
+   57     | '(' expr ')' expr_
+
+   58 expr_: binary_operator expr
+   59      | epsilon
+
+   60 operand: unary_operator operand
+   61        | var
+   62        | function_call
+   63        | CONSTANT_INT
+   64        | CONSTANT_REAL
+   65        | TRUE
+   66        | FALSE
+
+   67 unary_operator: '-'
+   68               | NOT
+
+   69 binary_operator: '+'
+   70                | '-'
+   71                | '*'
+   72                | '/'
+   73                | MOD
+   74                | SMALLER
+   75                | SMALLER_EQUAL
+   76                | EQUAL
+   77                | NOT_EQUAL
+   78                | GREATER_EQUAL
+   79                | GREATER
+   80                | AND
+   81                | OR
+
+   82 flow: if
+   83     | while
+   84     | for
+
+   85 if: IF expr THEN statements if_ _END IF
+
+   86 if_: ELSE statements
+   87    | epsilon
+
+   88 while: WHILE expr DO statements _END DO
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO CONSTANT_INT DO statements _END DO
+
+
+Terminals, with rules where they appear
+
+$end (0) 0
+'(' (40) 23 52 57
+')' (41) 23 52 57
+'*' (42) 71
+'+' (43) 69
+',' (44) 25 31 54
+'-' (45) 67 70
+'/' (47) 72
+':' (58) 17 27 28
+';' (59) 2 17 23 36 37 38 39 40
+'[' (91) 50
+']' (93) 50
+error (256)
+CONSTANT_INT (258) 10 20 63 89
+CONSTANT_REAL (259) 11 64
+CONSTANT_STRING (260) 12 45
+ID (261) 2 23 30 31 49 52 89
+MOD (262) 73
+ASSIGN (263) 46 89
+SMALLER (264) 74
+SMALLER_EQUAL (265) 75
+NOT_EQUAL (266) 77
+GREATER_EQUAL (267) 78
+GREATER (268) 79
+EQUAL (269) 76
+AND (270) 80
+OR (271) 81
+NOT (272) 68
+ARRAY (273) 20
+_BEGIN (274) 33
+BOOLEAN (275) 7
+DEF (276)
+DO (277) 88 89
+ELSE (278) 86
+_END (279) 2 23 33 85 88 89
+FALSE (280) 14 66
+FOR (281) 89
+INTEGER (282) 4
+IF (283) 85
+OF (284) 20
+PRINT (285) 44 45
+READ (286) 43
+REAL (287) 5
+STRING (288) 6
+THEN (289) 85
+TO (290) 20 89
+TRUE (291) 13 65
+RETURN (292) 47 48
+VAR (293) 17
+WHILE (294) 88
+UMINUS (295)
+
+
+Nonterminals, with rules where they appear
+
+$accept (52)
+    on left: 0
+epsilon (53)
+    on left: 1, on right: 9 16 22 26 29 32 35 51 55 59 87
+program (54)
+    on left: 2, on right: 0
+program_body (55)
+    on left: 3, on right: 2
+type (56)
+    on left: 4 5 6 7, on right: 19 27 28
+constants (57)
+    on left: 8 9, on right: 8 18
+constant (58)
+    on left: 10 11 12 13 14, on right: 8
+var_declars (59)
+    on left: 15 16, on right: 3 15 33
+var_declar (60)
+    on left: 17, on right: 15
+declar_type (61)
+    on left: 18 19 20, on right: 17 20
+func_declars (62)
+    on left: 21 22, on right: 3 21
+func_declar (63)
+    on left: 23, on right: 21
+arguments (64)
+    on left: 24 25 26, on right: 23 24 25
+argument (65)
+    on left: 27, on right: 24 25
+func_type (66)
+    on left: 28 29, on right: 23
+identifiers (67)
+    on left: 30 31 32, on right: 17 27 30 31
+compound_statement (68)
+    on left: 33, on right: 3 23 41
+statements (69)
+    on left: 34 35, on right: 33 34 85 86 88 89
+statement (70)
+    on left: 36 37 38 39 40 41 42, on right: 34
+read (71)
+    on left: 43, on right: 36
+print (72)
+    on left: 44 45, on right: 37
+assignment (73)
+    on left: 46, on right: 38
+return (74)
+    on left: 47 48, on right: 39
+var (75)
+    on left: 49, on right: 43 46 61
+var_ (76)
+    on left: 50 51, on right: 49 50
+function_call (77)
+    on left: 52, on right: 40 62
+exprs (78)
+    on left: 53 54 55, on right: 52 53 54
+expr (79)
+    on left: 56 57, on right: 44 46 47 50 53 54 57 58 85 88
+expr_ (80)
+    on left: 58 59, on right: 56 57
+operand (81)
+    on left: 60 61 62 63 64 65 66, on right: 56 60
+unary_operator (82)
+    on left: 67 68, on right: 60
+binary_operator (83)
+    on left: 69 70 71 72 73 74 75 76 77 78 79 80 81, on right: 58
+flow (84)
+    on left: 82 83 84, on right: 42
+if (85)
+    on left: 85, on right: 82
+if_ (86)
+    on left: 86 87, on right: 85
+while (87)
+    on left: 88, on right: 83
+for (88)
+    on left: 89, on right: 84
+
+
+State 0
+
+    0 $accept: . program $end
+
+    ID  shift, and go to state 1
+
+    program  go to state 2
+
+
+State 1
+
+    2 program: ID . ';' program_body _END ID
+
+    ';'  shift, and go to state 3
+
+
+State 2
+
+    0 $accept: program . $end
+
+    $end  shift, and go to state 4
+
+
+State 3
+
+    2 program: ID ';' . program_body _END ID
+
+    VAR  shift, and go to state 5
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon       go to state 6
+    program_body  go to state 7
+    var_declars   go to state 8
+    var_declar    go to state 9
+
+
+State 4
+
+    0 $accept: program $end .
+
+    $default  accept
+
+
+State 5
+
+   17 var_declar: VAR . identifiers ':' declar_type ';'
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 11
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 12
+    identifiers  go to state 13
+
+
+State 6
+
+   16 var_declars: epsilon .
+
+    $default  reduce using rule 16 (var_declars)
+
+
+State 7
+
+    2 program: ID ';' program_body . _END ID
+
+    _END  shift, and go to state 14
+
+
+State 8
+
+    3 program_body: var_declars . func_declars compound_statement
+
+    ID  shift, and go to state 15
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon       go to state 16
+    func_declars  go to state 17
+    func_declar   go to state 18
+
+
+State 9
+
+   15 var_declars: var_declar . var_declars
+
+    VAR  shift, and go to state 5
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 6
+    var_declars  go to state 19
+    var_declar   go to state 9
+
+
+State 10
+
+   30 identifiers: ID . identifiers
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 11
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 12
+    identifiers  go to state 20
+
+
+State 11
+
+   31 identifiers: ',' . ID identifiers
+
+    ID  shift, and go to state 21
+
+
+State 12
+
+   32 identifiers: epsilon .
+
+    $default  reduce using rule 32 (identifiers)
+
+
+State 13
+
+   17 var_declar: VAR identifiers . ':' declar_type ';'
+
+    ':'  shift, and go to state 22
+
+
+State 14
+
+    2 program: ID ';' program_body _END . ID
+
+    ID  shift, and go to state 23
+
+
+State 15
+
+   23 func_declar: ID . '(' arguments ')' func_type ';' compound_statement _END ID
+
+    '('  shift, and go to state 24
+
+
+State 16
+
+   22 func_declars: epsilon .
+
+    $default  reduce using rule 22 (func_declars)
+
+
+State 17
+
+    3 program_body: var_declars func_declars . compound_statement
+
+    _BEGIN  shift, and go to state 25
+
+    compound_statement  go to state 26
+
+
+State 18
+
+   21 func_declars: func_declar . func_declars
+
+    ID  shift, and go to state 15
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon       go to state 16
+    func_declars  go to state 27
+    func_declar   go to state 18
+
+
+State 19
+
+   15 var_declars: var_declar var_declars .
+
+    $default  reduce using rule 15 (var_declars)
+
+
+State 20
+
+   30 identifiers: ID identifiers .
+
+    $default  reduce using rule 30 (identifiers)
+
+
+State 21
+
+   31 identifiers: ',' ID . identifiers
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 11
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 12
+    identifiers  go to state 28
+
+
+State 22
+
+   17 var_declar: VAR identifiers ':' . declar_type ';'
+
+    CONSTANT_INT     shift, and go to state 29
+    CONSTANT_REAL    shift, and go to state 30
+    CONSTANT_STRING  shift, and go to state 31
+    ARRAY            shift, and go to state 32
+    BOOLEAN          shift, and go to state 33
+    FALSE            shift, and go to state 34
+    INTEGER          shift, and go to state 35
+    REAL             shift, and go to state 36
+    STRING           shift, and go to state 37
+    TRUE             shift, and go to state 38
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 39
+    type         go to state 40
+    constants    go to state 41
+    constant     go to state 42
+    declar_type  go to state 43
+
+
+State 23
+
+    2 program: ID ';' program_body _END ID .
+
+    $default  reduce using rule 2 (program)
+
+
+State 24
+
+   23 func_declar: ID '(' . arguments ')' func_type ';' compound_statement _END ID
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 44
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 45
+    arguments    go to state 46
+    argument     go to state 47
+    identifiers  go to state 48
+
+
+State 25
+
+   33 compound_statement: _BEGIN . var_declars statements _END
+
+    VAR  shift, and go to state 5
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 6
+    var_declars  go to state 49
+    var_declar   go to state 9
+
+
+State 26
+
+    3 program_body: var_declars func_declars compound_statement .
+
+    $default  reduce using rule 3 (program_body)
+
+
+State 27
+
+   21 func_declars: func_declar func_declars .
+
+    $default  reduce using rule 21 (func_declars)
+
+
+State 28
+
+   31 identifiers: ',' ID identifiers .
+
+    $default  reduce using rule 31 (identifiers)
+
+
+State 29
+
+   10 constant: CONSTANT_INT .
+
+    $default  reduce using rule 10 (constant)
+
+
+State 30
+
+   11 constant: CONSTANT_REAL .
+
+    $default  reduce using rule 11 (constant)
+
+
+State 31
+
+   12 constant: CONSTANT_STRING .
+
+    $default  reduce using rule 12 (constant)
+
+
+State 32
+
+   20 declar_type: ARRAY . CONSTANT_INT TO CONSTANT_INT OF declar_type
+
+    CONSTANT_INT  shift, and go to state 50
+
+
+State 33
+
+    7 type: BOOLEAN .
+
+    $default  reduce using rule 7 (type)
+
+
+State 34
+
+   14 constant: FALSE .
+
+    $default  reduce using rule 14 (constant)
+
+
+State 35
+
+    4 type: INTEGER .
+
+    $default  reduce using rule 4 (type)
+
+
+State 36
+
+    5 type: REAL .
+
+    $default  reduce using rule 5 (type)
+
+
+State 37
+
+    6 type: STRING .
+
+    $default  reduce using rule 6 (type)
+
+
+State 38
+
+   13 constant: TRUE .
+
+    $default  reduce using rule 13 (constant)
+
+
+State 39
+
+    9 constants: epsilon .
+
+    $default  reduce using rule 9 (constants)
+
+
+State 40
+
+   19 declar_type: type .
+
+    $default  reduce using rule 19 (declar_type)
+
+
+State 41
+
+   18 declar_type: constants .
+
+    $default  reduce using rule 18 (declar_type)
+
+
+State 42
+
+    8 constants: constant . constants
+
+    CONSTANT_INT     shift, and go to state 29
+    CONSTANT_REAL    shift, and go to state 30
+    CONSTANT_STRING  shift, and go to state 31
+    FALSE            shift, and go to state 34
+    TRUE             shift, and go to state 38
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon    go to state 39
+    constants  go to state 51
+    constant   go to state 42
+
+
+State 43
+
+   17 var_declar: VAR identifiers ':' declar_type . ';'
+
+    ';'  shift, and go to state 52
+
+
+State 44
+
+   25 arguments: ',' . argument arguments
+   31 identifiers: ',' . ID identifiers
+
+    ID   shift, and go to state 53
+    ','  shift, and go to state 11
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 12
+    argument     go to state 54
+    identifiers  go to state 48
+
+
+State 45
+
+   26 arguments: epsilon .
+   32 identifiers: epsilon .
+
+    ':'       reduce using rule 32 (identifiers)
+    $default  reduce using rule 26 (arguments)
+
+
+State 46
+
+   23 func_declar: ID '(' arguments . ')' func_type ';' compound_statement _END ID
+
+    ')'  shift, and go to state 55
+
+
+State 47
+
+   24 arguments: argument . arguments
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 44
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 45
+    arguments    go to state 56
+    argument     go to state 47
+    identifiers  go to state 48
+
+
+State 48
+
+   27 argument: identifiers . ':' type
+
+    ':'  shift, and go to state 57
+
+
+State 49
+
+   33 compound_statement: _BEGIN var_declars . statements _END
+
+    ID      shift, and go to state 58
+    _BEGIN  shift, and go to state 25
+    FOR     shift, and go to state 59
+    IF      shift, and go to state 60
+    PRINT   shift, and go to state 61
+    READ    shift, and go to state 62
+    RETURN  shift, and go to state 63
+    WHILE   shift, and go to state 64
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon             go to state 65
+    compound_statement  go to state 66
+    statements          go to state 67
+    statement           go to state 68
+    read                go to state 69
+    print               go to state 70
+    assignment          go to state 71
+    return              go to state 72
+    var                 go to state 73
+    function_call       go to state 74
+    flow                go to state 75
+    if                  go to state 76
+    while               go to state 77
+    for                 go to state 78
+
+
+State 50
+
+   20 declar_type: ARRAY CONSTANT_INT . TO CONSTANT_INT OF declar_type
+
+    TO  shift, and go to state 79
+
+
+State 51
+
+    8 constants: constant constants .
+
+    $default  reduce using rule 8 (constants)
+
+
+State 52
+
+   17 var_declar: VAR identifiers ':' declar_type ';' .
+
+    $default  reduce using rule 17 (var_declar)
+
+
+State 53
+
+   30 identifiers: ID . identifiers
+   31            | ',' ID . identifiers
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 11
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 12
+    identifiers  go to state 80
+
+
+State 54
+
+   25 arguments: ',' argument . arguments
+
+    ID   shift, and go to state 10
+    ','  shift, and go to state 44
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 45
+    arguments    go to state 81
+    argument     go to state 47
+    identifiers  go to state 48
+
+
+State 55
+
+   23 func_declar: ID '(' arguments ')' . func_type ';' compound_statement _END ID
+
+    ':'  shift, and go to state 82
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon    go to state 83
+    func_type  go to state 84
+
+
+State 56
+
+   24 arguments: argument arguments .
+
+    $default  reduce using rule 24 (arguments)
+
+
+State 57
+
+   27 argument: identifiers ':' . type
+
+    BOOLEAN  shift, and go to state 33
+    INTEGER  shift, and go to state 35
+    REAL     shift, and go to state 36
+    STRING   shift, and go to state 37
+
+    type  go to state 85
+
+
+State 58
+
+   49 var: ID . var_
+   52 function_call: ID . '(' exprs ')'
+
+    '('  shift, and go to state 86
+    '['  shift, and go to state 87
+
+    '('       [reduce using rule 1 (epsilon)]
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon  go to state 88
+    var_     go to state 89
+
+
+State 59
+
+   89 for: FOR . ID ASSIGN CONSTANT_INT TO CONSTANT_INT DO statements _END DO
+
+    ID  shift, and go to state 90
+
+
+State 60
+
+   85 if: IF . expr THEN statements if_ _END IF
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 100
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 61
+
+   44 print: PRINT . expr
+   45      | PRINT . CONSTANT_STRING
+
+    CONSTANT_INT     shift, and go to state 91
+    CONSTANT_REAL    shift, and go to state 92
+    CONSTANT_STRING  shift, and go to state 103
+    ID               shift, and go to state 58
+    NOT              shift, and go to state 93
+    FALSE            shift, and go to state 94
+    TRUE             shift, and go to state 95
+    '-'              shift, and go to state 96
+    '('              shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 104
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 62
+
+   43 read: READ . var
+
+    ID  shift, and go to state 105
+
+    var  go to state 106
+
+
+State 63
+
+   47 return: RETURN . expr
+   48       | RETURN .
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    $default  reduce using rule 48 (return)
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 107
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 64
+
+   88 while: WHILE . expr DO statements _END DO
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 108
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 65
+
+   35 statements: epsilon .
+
+    $default  reduce using rule 35 (statements)
+
+
+State 66
+
+   41 statement: compound_statement .
+
+    $default  reduce using rule 41 (statement)
+
+
+State 67
+
+   33 compound_statement: _BEGIN var_declars statements . _END
+
+    _END  shift, and go to state 109
+
+
+State 68
+
+   34 statements: statement . statements
+
+    ID      shift, and go to state 58
+    _BEGIN  shift, and go to state 25
+    FOR     shift, and go to state 59
+    IF      shift, and go to state 60
+    PRINT   shift, and go to state 61
+    READ    shift, and go to state 62
+    RETURN  shift, and go to state 63
+    WHILE   shift, and go to state 64
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon             go to state 65
+    compound_statement  go to state 66
+    statements          go to state 110
+    statement           go to state 68
+    read                go to state 69
+    print               go to state 70
+    assignment          go to state 71
+    return              go to state 72
+    var                 go to state 73
+    function_call       go to state 74
+    flow                go to state 75
+    if                  go to state 76
+    while               go to state 77
+    for                 go to state 78
+
+
+State 69
+
+   36 statement: read . ';'
+
+    ';'  shift, and go to state 111
+
+
+State 70
+
+   37 statement: print . ';'
+
+    ';'  shift, and go to state 112
+
+
+State 71
+
+   38 statement: assignment . ';'
+
+    ';'  shift, and go to state 113
+
+
+State 72
+
+   39 statement: return . ';'
+
+    ';'  shift, and go to state 114
+
+
+State 73
+
+   46 assignment: var . ASSIGN expr
+
+    ASSIGN  shift, and go to state 115
+
+
+State 74
+
+   40 statement: function_call . ';'
+
+    ';'  shift, and go to state 116
+
+
+State 75
+
+   42 statement: flow .
+
+    $default  reduce using rule 42 (statement)
+
+
+State 76
+
+   82 flow: if .
+
+    $default  reduce using rule 82 (flow)
+
+
+State 77
+
+   83 flow: while .
+
+    $default  reduce using rule 83 (flow)
+
+
+State 78
+
+   84 flow: for .
+
+    $default  reduce using rule 84 (flow)
+
+
+State 79
+
+   20 declar_type: ARRAY CONSTANT_INT TO . CONSTANT_INT OF declar_type
+
+    CONSTANT_INT  shift, and go to state 117
+
+
+State 80
+
+   30 identifiers: ID identifiers .
+   31            | ',' ID identifiers .
+
+    ':'       reduce using rule 30 (identifiers)
+    ':'       [reduce using rule 31 (identifiers)]
+    $default  reduce using rule 30 (identifiers)
+
+
+State 81
+
+   25 arguments: ',' argument arguments .
+
+    $default  reduce using rule 25 (arguments)
+
+
+State 82
+
+   28 func_type: ':' . type
+
+    BOOLEAN  shift, and go to state 33
+    INTEGER  shift, and go to state 35
+    REAL     shift, and go to state 36
+    STRING   shift, and go to state 37
+
+    type  go to state 118
+
+
+State 83
+
+   29 func_type: epsilon .
+
+    $default  reduce using rule 29 (func_type)
+
+
+State 84
+
+   23 func_declar: ID '(' arguments ')' func_type . ';' compound_statement _END ID
+
+    ';'  shift, and go to state 119
+
+
+State 85
+
+   27 argument: identifiers ':' type .
+
+    $default  reduce using rule 27 (argument)
+
+
+State 86
+
+   52 function_call: ID '(' . exprs ')'
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+    ','            shift, and go to state 120
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon         go to state 121
+    var             go to state 98
+    function_call   go to state 99
+    exprs           go to state 122
+    expr            go to state 123
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 87
+
+   50 var_: '[' . expr ']' var_
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 124
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 88
+
+   51 var_: epsilon .
+
+    $default  reduce using rule 51 (var_)
+
+
+State 89
+
+   49 var: ID var_ .
+
+    $default  reduce using rule 49 (var)
+
+
+State 90
+
+   89 for: FOR ID . ASSIGN CONSTANT_INT TO CONSTANT_INT DO statements _END DO
+
+    ASSIGN  shift, and go to state 125
+
+
+State 91
+
+   63 operand: CONSTANT_INT .
+
+    $default  reduce using rule 63 (operand)
+
+
+State 92
+
+   64 operand: CONSTANT_REAL .
+
+    $default  reduce using rule 64 (operand)
+
+
+State 93
+
+   68 unary_operator: NOT .
+
+    $default  reduce using rule 68 (unary_operator)
+
+
+State 94
+
+   66 operand: FALSE .
+
+    $default  reduce using rule 66 (operand)
+
+
+State 95
+
+   65 operand: TRUE .
+
+    $default  reduce using rule 65 (operand)
+
+
+State 96
+
+   67 unary_operator: '-' .
+
+    $default  reduce using rule 67 (unary_operator)
+
+
+State 97
+
+   57 expr: '(' . expr ')' expr_
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 126
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 98
+
+   61 operand: var .
+
+    $default  reduce using rule 61 (operand)
+
+
+State 99
+
+   62 operand: function_call .
+
+    $default  reduce using rule 62 (operand)
+
+
+State 100
+
+   85 if: IF expr . THEN statements if_ _END IF
+
+    THEN  shift, and go to state 127
+
+
+State 101
+
+   56 expr: operand . expr_
+
+    MOD            shift, and go to state 128
+    SMALLER        shift, and go to state 129
+    SMALLER_EQUAL  shift, and go to state 130
+    NOT_EQUAL      shift, and go to state 131
+    GREATER_EQUAL  shift, and go to state 132
+    GREATER        shift, and go to state 133
+    EQUAL          shift, and go to state 134
+    AND            shift, and go to state 135
+    OR             shift, and go to state 136
+    '+'            shift, and go to state 137
+    '-'            shift, and go to state 138
+    '*'            shift, and go to state 139
+    '/'            shift, and go to state 140
+
+    '-'       [reduce using rule 1 (epsilon)]
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon          go to state 141
+    expr_            go to state 142
+    binary_operator  go to state 143
+
+
+State 102
+
+   60 operand: unary_operator . operand
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+
+    var             go to state 98
+    function_call   go to state 99
+    operand         go to state 144
+    unary_operator  go to state 102
+
+
+State 103
+
+   45 print: PRINT CONSTANT_STRING .
+
+    $default  reduce using rule 45 (print)
+
+
+State 104
+
+   44 print: PRINT expr .
+
+    $default  reduce using rule 44 (print)
+
+
+State 105
+
+   49 var: ID . var_
+
+    '['  shift, and go to state 87
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon  go to state 88
+    var_     go to state 89
+
+
+State 106
+
+   43 read: READ var .
+
+    $default  reduce using rule 43 (read)
+
+
+State 107
+
+   47 return: RETURN expr .
+
+    $default  reduce using rule 47 (return)
+
+
+State 108
+
+   88 while: WHILE expr . DO statements _END DO
+
+    DO  shift, and go to state 145
+
+
+State 109
+
+   33 compound_statement: _BEGIN var_declars statements _END .
+
+    $default  reduce using rule 33 (compound_statement)
+
+
+State 110
+
+   34 statements: statement statements .
+
+    $default  reduce using rule 34 (statements)
+
+
+State 111
+
+   36 statement: read ';' .
+
+    $default  reduce using rule 36 (statement)
+
+
+State 112
+
+   37 statement: print ';' .
+
+    $default  reduce using rule 37 (statement)
+
+
+State 113
+
+   38 statement: assignment ';' .
+
+    $default  reduce using rule 38 (statement)
+
+
+State 114
+
+   39 statement: return ';' .
+
+    $default  reduce using rule 39 (statement)
+
+
+State 115
+
+   46 assignment: var ASSIGN . expr
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 146
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 116
+
+   40 statement: function_call ';' .
+
+    $default  reduce using rule 40 (statement)
+
+
+State 117
+
+   20 declar_type: ARRAY CONSTANT_INT TO CONSTANT_INT . OF declar_type
+
+    OF  shift, and go to state 147
+
+
+State 118
+
+   28 func_type: ':' type .
+
+    $default  reduce using rule 28 (func_type)
+
+
+State 119
+
+   23 func_declar: ID '(' arguments ')' func_type ';' . compound_statement _END ID
+
+    _BEGIN  shift, and go to state 25
+
+    compound_statement  go to state 148
+
+
+State 120
+
+   54 exprs: ',' . expr exprs
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 149
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 121
+
+   55 exprs: epsilon .
+
+    $default  reduce using rule 55 (exprs)
+
+
+State 122
+
+   52 function_call: ID '(' exprs . ')'
+
+    ')'  shift, and go to state 150
+
+
+State 123
+
+   53 exprs: expr . exprs
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+    ','            shift, and go to state 120
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon         go to state 121
+    var             go to state 98
+    function_call   go to state 99
+    exprs           go to state 151
+    expr            go to state 123
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 124
+
+   50 var_: '[' expr . ']' var_
+
+    ']'  shift, and go to state 152
+
+
+State 125
+
+   89 for: FOR ID ASSIGN . CONSTANT_INT TO CONSTANT_INT DO statements _END DO
+
+    CONSTANT_INT  shift, and go to state 153
+
+
+State 126
+
+   57 expr: '(' expr . ')' expr_
+
+    ')'  shift, and go to state 154
+
+
+State 127
+
+   85 if: IF expr THEN . statements if_ _END IF
+
+    ID      shift, and go to state 58
+    _BEGIN  shift, and go to state 25
+    FOR     shift, and go to state 59
+    IF      shift, and go to state 60
+    PRINT   shift, and go to state 61
+    READ    shift, and go to state 62
+    RETURN  shift, and go to state 63
+    WHILE   shift, and go to state 64
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon             go to state 65
+    compound_statement  go to state 66
+    statements          go to state 155
+    statement           go to state 68
+    read                go to state 69
+    print               go to state 70
+    assignment          go to state 71
+    return              go to state 72
+    var                 go to state 73
+    function_call       go to state 74
+    flow                go to state 75
+    if                  go to state 76
+    while               go to state 77
+    for                 go to state 78
+
+
+State 128
+
+   73 binary_operator: MOD .
+
+    $default  reduce using rule 73 (binary_operator)
+
+
+State 129
+
+   74 binary_operator: SMALLER .
+
+    $default  reduce using rule 74 (binary_operator)
+
+
+State 130
+
+   75 binary_operator: SMALLER_EQUAL .
+
+    $default  reduce using rule 75 (binary_operator)
+
+
+State 131
+
+   77 binary_operator: NOT_EQUAL .
+
+    $default  reduce using rule 77 (binary_operator)
+
+
+State 132
+
+   78 binary_operator: GREATER_EQUAL .
+
+    $default  reduce using rule 78 (binary_operator)
+
+
+State 133
+
+   79 binary_operator: GREATER .
+
+    $default  reduce using rule 79 (binary_operator)
+
+
+State 134
+
+   76 binary_operator: EQUAL .
+
+    $default  reduce using rule 76 (binary_operator)
+
+
+State 135
+
+   80 binary_operator: AND .
+
+    $default  reduce using rule 80 (binary_operator)
+
+
+State 136
+
+   81 binary_operator: OR .
+
+    $default  reduce using rule 81 (binary_operator)
+
+
+State 137
+
+   69 binary_operator: '+' .
+
+    $default  reduce using rule 69 (binary_operator)
+
+
+State 138
+
+   70 binary_operator: '-' .
+
+    $default  reduce using rule 70 (binary_operator)
+
+
+State 139
+
+   71 binary_operator: '*' .
+
+    $default  reduce using rule 71 (binary_operator)
+
+
+State 140
+
+   72 binary_operator: '/' .
+
+    $default  reduce using rule 72 (binary_operator)
+
+
+State 141
+
+   59 expr_: epsilon .
+
+    $default  reduce using rule 59 (expr_)
+
+
+State 142
+
+   56 expr: operand expr_ .
+
+    $default  reduce using rule 56 (expr)
+
+
+State 143
+
+   58 expr_: binary_operator . expr
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+
+    var             go to state 98
+    function_call   go to state 99
+    expr            go to state 156
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 144
+
+   60 operand: unary_operator operand .
+
+    $default  reduce using rule 60 (operand)
+
+
+State 145
+
+   88 while: WHILE expr DO . statements _END DO
+
+    ID      shift, and go to state 58
+    _BEGIN  shift, and go to state 25
+    FOR     shift, and go to state 59
+    IF      shift, and go to state 60
+    PRINT   shift, and go to state 61
+    READ    shift, and go to state 62
+    RETURN  shift, and go to state 63
+    WHILE   shift, and go to state 64
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon             go to state 65
+    compound_statement  go to state 66
+    statements          go to state 157
+    statement           go to state 68
+    read                go to state 69
+    print               go to state 70
+    assignment          go to state 71
+    return              go to state 72
+    var                 go to state 73
+    function_call       go to state 74
+    flow                go to state 75
+    if                  go to state 76
+    while               go to state 77
+    for                 go to state 78
+
+
+State 146
+
+   46 assignment: var ASSIGN expr .
+
+    $default  reduce using rule 46 (assignment)
+
+
+State 147
+
+   20 declar_type: ARRAY CONSTANT_INT TO CONSTANT_INT OF . declar_type
+
+    CONSTANT_INT     shift, and go to state 29
+    CONSTANT_REAL    shift, and go to state 30
+    CONSTANT_STRING  shift, and go to state 31
+    ARRAY            shift, and go to state 32
+    BOOLEAN          shift, and go to state 33
+    FALSE            shift, and go to state 34
+    INTEGER          shift, and go to state 35
+    REAL             shift, and go to state 36
+    STRING           shift, and go to state 37
+    TRUE             shift, and go to state 38
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon      go to state 39
+    type         go to state 40
+    constants    go to state 41
+    constant     go to state 42
+    declar_type  go to state 158
+
+
+State 148
+
+   23 func_declar: ID '(' arguments ')' func_type ';' compound_statement . _END ID
+
+    _END  shift, and go to state 159
+
+
+State 149
+
+   54 exprs: ',' expr . exprs
+
+    CONSTANT_INT   shift, and go to state 91
+    CONSTANT_REAL  shift, and go to state 92
+    ID             shift, and go to state 58
+    NOT            shift, and go to state 93
+    FALSE          shift, and go to state 94
+    TRUE           shift, and go to state 95
+    '-'            shift, and go to state 96
+    '('            shift, and go to state 97
+    ','            shift, and go to state 120
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon         go to state 121
+    var             go to state 98
+    function_call   go to state 99
+    exprs           go to state 160
+    expr            go to state 123
+    operand         go to state 101
+    unary_operator  go to state 102
+
+
+State 150
+
+   52 function_call: ID '(' exprs ')' .
+
+    $default  reduce using rule 52 (function_call)
+
+
+State 151
+
+   53 exprs: expr exprs .
+
+    $default  reduce using rule 53 (exprs)
+
+
+State 152
+
+   50 var_: '[' expr ']' . var_
+
+    '['  shift, and go to state 87
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon  go to state 88
+    var_     go to state 161
+
+
+State 153
+
+   89 for: FOR ID ASSIGN CONSTANT_INT . TO CONSTANT_INT DO statements _END DO
+
+    TO  shift, and go to state 162
+
+
+State 154
+
+   57 expr: '(' expr ')' . expr_
+
+    MOD            shift, and go to state 128
+    SMALLER        shift, and go to state 129
+    SMALLER_EQUAL  shift, and go to state 130
+    NOT_EQUAL      shift, and go to state 131
+    GREATER_EQUAL  shift, and go to state 132
+    GREATER        shift, and go to state 133
+    EQUAL          shift, and go to state 134
+    AND            shift, and go to state 135
+    OR             shift, and go to state 136
+    '+'            shift, and go to state 137
+    '-'            shift, and go to state 138
+    '*'            shift, and go to state 139
+    '/'            shift, and go to state 140
+
+    '-'       [reduce using rule 1 (epsilon)]
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon          go to state 141
+    expr_            go to state 163
+    binary_operator  go to state 143
+
+
+State 155
+
+   85 if: IF expr THEN statements . if_ _END IF
+
+    ELSE  shift, and go to state 164
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon  go to state 165
+    if_      go to state 166
+
+
+State 156
+
+   58 expr_: binary_operator expr .
+
+    $default  reduce using rule 58 (expr_)
+
+
+State 157
+
+   88 while: WHILE expr DO statements . _END DO
+
+    _END  shift, and go to state 167
+
+
+State 158
+
+   20 declar_type: ARRAY CONSTANT_INT TO CONSTANT_INT OF declar_type .
+
+    $default  reduce using rule 20 (declar_type)
+
+
+State 159
+
+   23 func_declar: ID '(' arguments ')' func_type ';' compound_statement _END . ID
+
+    ID  shift, and go to state 168
+
+
+State 160
+
+   54 exprs: ',' expr exprs .
+
+    $default  reduce using rule 54 (exprs)
+
+
+State 161
+
+   50 var_: '[' expr ']' var_ .
+
+    $default  reduce using rule 50 (var_)
+
+
+State 162
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO . CONSTANT_INT DO statements _END DO
+
+    CONSTANT_INT  shift, and go to state 169
+
+
+State 163
+
+   57 expr: '(' expr ')' expr_ .
+
+    $default  reduce using rule 57 (expr)
+
+
+State 164
+
+   86 if_: ELSE . statements
+
+    ID      shift, and go to state 58
+    _BEGIN  shift, and go to state 25
+    FOR     shift, and go to state 59
+    IF      shift, and go to state 60
+    PRINT   shift, and go to state 61
+    READ    shift, and go to state 62
+    RETURN  shift, and go to state 63
+    WHILE   shift, and go to state 64
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon             go to state 65
+    compound_statement  go to state 66
+    statements          go to state 170
+    statement           go to state 68
+    read                go to state 69
+    print               go to state 70
+    assignment          go to state 71
+    return              go to state 72
+    var                 go to state 73
+    function_call       go to state 74
+    flow                go to state 75
+    if                  go to state 76
+    while               go to state 77
+    for                 go to state 78
+
+
+State 165
+
+   87 if_: epsilon .
+
+    $default  reduce using rule 87 (if_)
+
+
+State 166
+
+   85 if: IF expr THEN statements if_ . _END IF
+
+    _END  shift, and go to state 171
+
+
+State 167
+
+   88 while: WHILE expr DO statements _END . DO
+
+    DO  shift, and go to state 172
+
+
+State 168
+
+   23 func_declar: ID '(' arguments ')' func_type ';' compound_statement _END ID .
+
+    $default  reduce using rule 23 (func_declar)
+
+
+State 169
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO CONSTANT_INT . DO statements _END DO
+
+    DO  shift, and go to state 173
+
+
+State 170
+
+   86 if_: ELSE statements .
+
+    $default  reduce using rule 86 (if_)
+
+
+State 171
+
+   85 if: IF expr THEN statements if_ _END . IF
+
+    IF  shift, and go to state 174
+
+
+State 172
+
+   88 while: WHILE expr DO statements _END DO .
+
+    $default  reduce using rule 88 (while)
+
+
+State 173
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO CONSTANT_INT DO . statements _END DO
+
+    ID      shift, and go to state 58
+    _BEGIN  shift, and go to state 25
+    FOR     shift, and go to state 59
+    IF      shift, and go to state 60
+    PRINT   shift, and go to state 61
+    READ    shift, and go to state 62
+    RETURN  shift, and go to state 63
+    WHILE   shift, and go to state 64
+
+    $default  reduce using rule 1 (epsilon)
+
+    epsilon             go to state 65
+    compound_statement  go to state 66
+    statements          go to state 175
+    statement           go to state 68
+    read                go to state 69
+    print               go to state 70
+    assignment          go to state 71
+    return              go to state 72
+    var                 go to state 73
+    function_call       go to state 74
+    flow                go to state 75
+    if                  go to state 76
+    while               go to state 77
+    for                 go to state 78
+
+
+State 174
+
+   85 if: IF expr THEN statements if_ _END IF .
+
+    $default  reduce using rule 85 (if)
+
+
+State 175
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO CONSTANT_INT DO statements . _END DO
+
+    _END  shift, and go to state 176
+
+
+State 176
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO CONSTANT_INT DO statements _END . DO
+
+    DO  shift, and go to state 177
+
+
+State 177
+
+   89 for: FOR ID ASSIGN CONSTANT_INT TO CONSTANT_INT DO statements _END DO .
+
+    $default  reduce using rule 89 (for)

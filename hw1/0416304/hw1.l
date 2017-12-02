@@ -113,7 +113,7 @@ not  { token(yytext); }
               buf[0] = '\0';
             }
 [ \t]       { LIST; }
-.           { printf("Errpe: No Rule matched.\n"); return 1; }
+.           { printf("error at line %d: bad character \"%s\"\n",linenum,yytext); return 1; }
 %%
 int main( int argc, char **argv )
 {
