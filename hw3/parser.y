@@ -17,29 +17,84 @@ extern char buf[256];		/* declared in lex.l */
 extern int yylex(void);
 int yyerror(char* );
 int Opt_D = 1;
+bool parsing_func = false;
 
 
 void dumpsymbol() {
-    int i, j;
-    for(i=0;i< 110;i++)
+    const char* __type_names[] = { "program", "void", "string", "real", "integer","boolean", "function", "", "parameter", "variable", "constant", "variable", "loop_variable" };
+    for(int i = 0; i < 110; i++)
         printf("=");
     printf("\n");
-    printf("%-33s%-11s%-11s%-17s%-11s\n","Name","Kind","Level","Type","Attribute");
-    for(i=0;i< 110;i++)
+    printf("%-33s%-11s%-11s%-17s%-11s\n", "Name", "Kind", "Level", "Type", "Attribute");
+    for(int i = 0; i < 110; i++)
         printf("-");
     printf("\n");
-    
-    for(i = 0 ;i < symbol_table.level ; i ++)
-        for(j = 0 ;j < symbol_table.levels[i].size ; j ++)
-        {
-            printf("%-33s", "func");
-            printf("%-11s", "function");
-            printf("%d%-10s", 0,"(global)");
-            printf("%-17s", "boolean");
-            printf("%-11s", "integer, real [2][3]");
-            printf("\n");
+    int n = symbol_table.level;
+    for(int i = 0 ;i < symbol_table.levels[n].size ; i ++){
+        Symbol *symbol = symbol_table.levels[n].symbols + i;
+        if(symbol->node_type == T_LOOP_VAR)continue;
+        // print symbol name
+        printf("%-33s", symbol->name);
+        // print symbol node_type (array, function, program ... etc)
+        printf("%-11s", __type_names[symbol->node_type]);
+        // print scope
+        printf("%d%-10s", n, n ? "(local)" : "(global)");
+        // print type
+        char type[64] = ""; 
+        if(symbol->type){
+            sprintf(type, "%s", __type_names[symbol->type->type]);
+            if(symbol->type->dims){
+                strcat(type, " ");
+                for(int k =  symbol->type->dims-1 ; k >= 0 ; k --){
+                    int l = strlen(type);
+                    type[l++] = '[';
+                    sprintf(type + l, "%d", symbol->type->dim_nodes[k].size);
+                    l = strlen(type);
+                    type[l++] = ']';
+                    type[l] = '\0';
+                }
+            }
         }
-    for(i=0;i< 110;i++)
+        printf("%-17s", type);
+        // print attribute
+        if(symbol->node_type == T_VAR || symbol->node_type == T_CONST_VAR){
+            // check symbol have attribute or not
+            if(symbol->attr != NULL){
+                RValueNode *rvalue = symbol->attr->rvalue; 
+                NodeType type = rvalue->type;
+                if(type == T_INTEGER)
+                    printf("%-11d", rvalue->value.int_value);
+                else if(type == T_REAL)
+                    printf("%-11f", rvalue->value.real_value);
+                else if(type == T_STRING)
+                    printf("%-11s", rvalue->value.str_value);
+                else if(type == T_BOOLEAN)
+                    printf("%-11s", rvalue->value.bool_value ? "true" : "false");
+            }
+        }
+        else if(symbol->node_type == T_FUNCTION){
+            char serialized_params[128] = "";
+            for(int p = 0 ;p < symbol->attr->func_attr->params_size ; p ++){
+                if(p)strcat(serialized_params, ", ");
+                Param param = symbol->attr->func_attr->params[p];
+                strcat(serialized_params, __type_names[param.type->type]);
+                if(param.type->dims){
+                    strcat(serialized_params, " ");
+                    for(int k = param.type->dims - 1; k >= 0; k --){
+                        int l = strlen(serialized_params);
+                        serialized_params[l++] = '[';
+                        sprintf(serialized_params + l, "%d", param.type->dim_nodes[k].size);
+                        l = strlen(serialized_params);
+                        serialized_params[l++] = ']';
+                        serialized_params[l] = '\0';
+                    }
+                }
+            }
+            printf("%-11s", serialized_params);
+        }
+        printf("\n");
+    }
+    for(int i = 0; i < 110; i++)
         printf("-");
     printf("\n");
 }
@@ -55,7 +110,7 @@ void dumpsymbol() {
     struct IDList *id_list;
     struct RValueNode *rvalue;
     struct FuncNode *func;
-    struct ParamsList *params;
+    struct ParamList *params;
     struct ExprList *expr;
     struct ExprNode *exprs;
 }
@@ -74,7 +129,7 @@ void dumpsymbol() {
 %token<real_val> SCIENTIFIC 
 %token<str_val> STR_CONST
 
-%type<type> type scalar_type array_type 
+%type<type> type scalar_type array_type opt_type 
 %type<id_list> id_list
 %type<rvalue> literal_const
 %type<func> func_decl
@@ -85,16 +140,14 @@ void dumpsymbol() {
 %start program
 %%
 
-program			: ID {
-                    //Symbol *prog_name = symbol($1, T_PROGRAM, NULL, NULL);
-                    //symbol_table_insert(prog_name);
-                } MK_SEMICOLON 
-                program_body
-                END ID{
-                    if(strcmp($1, $6)){
-                        printf("program id mismatch.\n");
-                    }
-                }
+program		: ID {
+                TypeNode *type = (TypeNode*)malloc(sizeof(TypeNode));
+                *type = (TypeNode){ .type = T_VOID, .dims = 0, .__max_dims = 0, .dim_nodes = NULL };
+                Symbol *prog_name = symbol($1, T_PROGRAM, type, NULL);
+                symbol_table_insert(prog_name);
+            } MK_SEMICOLON 
+            program_body
+            END ID { if(Opt_D)dumpsymbol(); }
 			;
 
 program_body		: opt_decl_list opt_func_decl_list compound_stmt
@@ -114,21 +167,46 @@ decl		: VAR id_list MK_COLON scalar_type MK_SEMICOLON {
                 TypeNode *type = $4;
                 for(int i = 0; i < id_list->size ;i ++){
                     IDNode *id_node = id_list->id_nodes + i;
-                    if(check_redeclar(id_node) == false){
+                    if(check_redeclar(id_node->id) == false){
                         Symbol *s = symbol(id_node->id, T_VAR, type, NULL);
                         symbol_table_insert(s);
                     }
+                    else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, id_node->id);
                 }
             } 
             | VAR id_list MK_COLON array_type MK_SEMICOLON {
                 /* array type declaration */
                 IDList *id_list = $2;
                 TypeNode *type = $4;
+                for(int i = 0; i < id_list->size ;i ++){
+                    IDNode *id_node = id_list->id_nodes + i;
+                    if(check_redeclar(id_node->id) == false){
+                        Symbol *s = symbol(id_node->id, T_ARRAY, type, NULL);
+                        symbol_table_insert(s);
+                    }
+                    else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, id_node->id);
+                }
             }
             
             | VAR id_list MK_COLON literal_const MK_SEMICOLON     {
                 /* const declaration */
                 IDList *id_list = $2;
+                TypeNode *type = type_node($4->type);
+                AttrNode *attr = (AttrNode*)malloc(sizeof(AttrNode));
+                attr->rvalue = (RValueNode*)malloc(sizeof(RValueNode));
+                attr->rvalue->type = $4->type;
+                if($4->type == T_INTEGER)attr->rvalue->value.int_value = $4->value.int_value;
+                else if($4->type == T_REAL)attr->rvalue->value.real_value = $4->value.real_value;
+                else if($4->type == T_STRING)attr->rvalue->value.str_value = strdup($4->value.str_value);
+                else if($4->type == T_BOOLEAN)attr->rvalue->value.bool_value = $4->value.bool_value;
+                for(int i = 0; i < id_list->size ;i ++){
+                    IDNode *id_node = id_list->id_nodes + i;
+                    if(check_redeclar(id_node->id) == false){
+                        Symbol *s = symbol(id_node->id, T_CONST_VAR, type, attr);
+                        symbol_table_insert(s);
+                    }
+                    else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, id_node->id);
+                }
             }
 			;
 int_const	:	INT_CONST { $$ = $1; }
@@ -138,32 +216,26 @@ int_const	:	INT_CONST { $$ = $1; }
 literal_const	: int_const {
                 int val = $1;
                 $$ = rvalue_node(T_INTEGER, &val);
-                printf("rvalue: %d\n", $$->value.int_value);
             }
 			| OP_SUB int_const {
                 int val = -1 * $2;
                 $$ = rvalue_node(T_INTEGER, &val);
-                printf("rvalue: %d\n", $$->value.int_value);
             }
 			| FLOAT_CONST {
                 float val = $1;
                 $$ = rvalue_node(T_REAL, &val);
-                printf("rvalue: %f\n", $$->value.real_value);
             }
 			| OP_SUB FLOAT_CONST {
                 float val = -1 * $2;
                 $$ = rvalue_node(T_REAL, &val);
-                printf("rvalue: %f\n", $$->value.real_value);
             }
 			| SCIENTIFIC {
                 float val = $1;
                 $$ = rvalue_node(T_REAL, &val);
-                printf("rvalue: %f\n", $$->value.real_value);
             }
 			| OP_SUB SCIENTIFIC {
                 float val = -1 * $2;
                 $$ = rvalue_node(T_REAL, &val);
-                printf("rvalue: %f\n", $$->value.real_value);
             }
 			| STR_CONST {
                 $$ = rvalue_node(T_STRING, $1);
@@ -171,13 +243,10 @@ literal_const	: int_const {
 			| TRUE {
                 bool val = true;
                 $$ = rvalue_node(T_BOOLEAN, &val);
-                printf("rvalue: %d\n", $$->value.bool_value);
             }
 			| FALSE {
                 bool val  = false; 
                 $$ = rvalue_node(T_BOOLEAN, &val);
-                printf("rvalue: %d\n", $$->value.bool_value);
-            
             }
 			;
 
@@ -189,28 +258,55 @@ func_decl_list		: func_decl_list func_decl
 			| func_decl
 			;
 
-func_decl		: ID {
+func_decl	: ID MK_LPAREN {
+                parsing_func = true;
+                symbol_table_new_scope();
+            } opt_param_list MK_RPAREN opt_type {
+                ParamList *param_list = $4;
+                TypeNode *type = $6;
+                AttrNode *attr = (AttrNode*)malloc(sizeof(AttrNode));
+                attr->func_attr = (FuncAttr*)malloc(sizeof(FuncAttr));
+                attr->func_attr->return_type = type;
+                attr->func_attr->params_size = param_list->size;
+                attr->func_attr->params = param_list->params;
+                Symbol *func_name = symbol($1, T_FUNCTION, type, attr);
+                symbol_table_global(func_name);
                 
-                } MK_LPAREN opt_param_list {
-                
-                }MK_RPAREN opt_type {
-                
-                }MK_SEMICOLON
-			  compound_stmt
-			  END ID {
-              
-              }
+                for(int i = 0 ;i < param_list->size ;i ++){
+                    Param *p = param_list->params + i;
+                    if(check_redeclar(p->name) == false){
+                        Symbol *s = symbol(p->name, T_PARAM, p->type, NULL);
+                        symbol_table_insert(s);
+                    }
+                    else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, p->name);
+                }
+            } MK_SEMICOLON
+			compound_stmt 
+			END ID {
+                // check $1 $12 equal 
+            } 
 			;
 
-opt_param_list		: param_list {}
-			| /* epsilon */ {}
+opt_param_list		: param_list { $$ = $1; }
+			| /* epsilon */ { $$ = param_list_create(); }
 			;
 
-param_list		: param_list MK_SEMICOLON param {}
-			| param {}
+param_list	: param_list MK_SEMICOLON param {
+                param_list_extend($$, $3);
+            }
+			| param { $$ = $1; }
 			;
 
-param			: id_list MK_COLON type {}
+param		: id_list MK_COLON type {
+                $$ = param_list_create(); 
+                IDList *id_list = $1;
+                TypeNode *type = $3;
+                for(int i = 0; i < id_list->size ;i ++){
+                    IDNode *id_node = id_list->id_nodes + i;
+                    Param *p = param(id_node->id, type->dims ? T_ARRAY : T_VAR , type);
+                    param_list_insert($$, p);
+                }   
+            }
 			;
 
 id_list		: id_list MK_COMMA ID {
@@ -222,8 +318,8 @@ id_list		: id_list MK_COMMA ID {
             }
 			;
 
-opt_type		: MK_COLON type
-			| /* epsilon */
+opt_type		: MK_COLON type { $$ = $2; }
+			| /* epsilon */ { $$ = type_node(T_VOID); }
 			;
 
 type			: scalar_type
@@ -236,9 +332,7 @@ scalar_type	: INTEGER { $$ = type_node(T_INTEGER); }
 			| STRING { $$ = type_node(T_STRING); }
 			;
 
-array_type	: ARRAY int_const TO int_const OF type {
-                $$ = array_type_node($6, $2, $4);        
-            }
+array_type	: ARRAY int_const TO int_const OF type { $$ = array_type_node($6, $2, $4); }
 			;
 
 stmt			: compound_stmt
@@ -251,20 +345,22 @@ stmt			: compound_stmt
 			;
 
 compound_stmt	: BEG {
-                    symbol_table_new_scope();
+                    if(!parsing_func) symbol_table_new_scope();
+                    else parsing_func = false;
                 }
-			  opt_decl_list
-			  opt_stmt_list
-			  END {
+			    opt_decl_list
+			    opt_stmt_list
+			    END {
+                    if(Opt_D)dumpsymbol();
                     symbol_table_delete_scope();
-              }
+                }
 			;
 
 opt_stmt_list		: stmt_list
 			| /* epsilon */
 			;
 
-stmt_list		: stmt_list stmt
+stmt_list	: stmt_list stmt
 			| stmt
 			;
 
@@ -276,11 +372,7 @@ simple_stmt		: var_ref OP_ASSIGN boolean_expr MK_SEMICOLON
 proc_call_stmt		: ID MK_LPAREN opt_boolean_expr_list MK_RPAREN MK_SEMICOLON
 			;
 
-cond_stmt		: IF boolean_expr THEN
-			  opt_stmt_list
-			  ELSE
-			  opt_stmt_list
-			  END IF
+cond_stmt		: IF boolean_expr THEN opt_stmt_list ELSE opt_stmt_list END IF
 			| IF boolean_expr THEN opt_stmt_list END IF
 			;
 
@@ -289,9 +381,17 @@ while_stmt		: WHILE boolean_expr DO
 			  END DO
 			;
 
-for_stmt		: FOR ID OP_ASSIGN int_const TO int_const DO
-			  opt_stmt_list
-			  END DO
+for_stmt	: FOR ID OP_ASSIGN int_const TO int_const {
+                symbol_table_new_scope(); 
+                if(check_redeclar($2) == false){
+                    Symbol *s = symbol($2, T_LOOP_VAR, type_node(T_INTEGER), NULL);
+                    symbol_table_insert(s);
+                }
+                else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, $2);
+            }
+                DO
+			    opt_stmt_list
+			END DO { symbol_table_delete_scope(); }
 			;
 
 return_stmt		: RETURN boolean_expr MK_SEMICOLON
@@ -355,30 +455,16 @@ factor			: var_ref
 			| literal_const
 			;
 
-var_ref			: ID{
-
-            }
-			| var_ref dim {
-                
-            }
+var_ref			: ID
+			| var_ref dim 
 			;
 
-dim			: MK_LB boolean_expr MK_RB {
-
-            }
-			;
+dim			: MK_LB boolean_expr MK_RB ;
 
 %%
 
-
 int yyerror( char *msg )
 {
-	(void) msg;
-	fprintf( stderr, "\n|--------------------------------------------------------------------------\n" );
-	fprintf( stderr, "| Error found in Line #%d: %s\n", linenum, buf );
-	fprintf( stderr, "|\n" );
-	fprintf( stderr, "| Unmatched token: %s\n", yytext );
-	fprintf( stderr, "|--------------------------------------------------------------------------\n" );
 	exit(-1);
 }
 

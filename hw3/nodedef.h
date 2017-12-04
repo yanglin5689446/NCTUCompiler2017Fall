@@ -11,11 +11,13 @@ typedef enum {
     T_REAL,
     T_INTEGER, 
     T_BOOLEAN, 
-    T_ARRAY,
     T_FUNCTION,
-    PARAMS,
+    T_PARAMS,
+    T_PARAM,
     T_VAR,
     T_CONST_VAR,
+    T_ARRAY,
+    T_LOOP_VAR
 } NodeType;
 
 typedef struct RValueNode{
@@ -37,9 +39,7 @@ typedef struct TypeNode{
     ArrayDimNode* dim_nodes;
 } TypeNode;
 
-typedef struct IDNode{
-    char *id;
-} IDNode;
+typedef struct IDNode{ char *id; } IDNode;
 
 typedef struct IDList{
     NodeType type;
@@ -47,14 +47,6 @@ typedef struct IDList{
     int __max_size;
     IDNode* id_nodes;
 } IDList;
-
-typedef struct Params{
-    NodeType type;
-} Params;
-
-typedef struct ParamsList{
-    NodeType type;
-} ParamsList;
 
 typedef struct ExprList{
     NodeType type;
@@ -64,17 +56,39 @@ typedef struct ExprNode{
     NodeType type;
 } ExprNode;
 
-typedef struct AttrNode{
-    ParamsList *params;
+typedef struct Param{
+    char* name;
+    NodeType node_type;
+    TypeNode *type;
+} Param; 
+
+typedef struct FuncAttr{
+    int params_size;
+    Param *params;
+    TypeNode *return_type;
+} FuncAttr;
+
+typedef union AttrNode{
+    FuncAttr *func_attr;
     RValueNode *rvalue;
 } AttrNode;
 
 typedef struct Symbol{
     char* name;
     NodeType node_type;
-    TypeNode type;
-    AttrNode attr;
+    TypeNode *type;
+    AttrNode *attr;
 } Symbol;
+
+typedef struct ParamList{
+    NodeType type;
+    int size;
+    int __max_size;
+    Param* params;
+} ParamList;
+
+bool parsing_func;
+bool parsing_loop;
 
 
 #endif

@@ -29,10 +29,6 @@ int  main( int argc, char **argv )
 	yyin = fp;
 	yyparse();	/* primary procedure of parser */
 	
-	fprintf( stdout, "\n|--------------------------------|\n" );
-	fprintf( stdout, "|  There is no syntactic error!  |\n" );
-	fprintf( stdout, "|--------------------------------|\n" );
-
 	exit(0);
 }
 

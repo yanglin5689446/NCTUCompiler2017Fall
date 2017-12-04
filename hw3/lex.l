@@ -101,7 +101,7 @@ identifier ({letter})({letter}|{digit})*
 {identifier}		{ 
                         tokenString("id", yytext); 
                         char id[32+1] = "";
-                        strncpy(id, yytext, sizeof(id));
+                        strncpy(id, yytext, 32);
                         yylval.str_val = strdup(id);
                         return ID; 
                     }
@@ -144,7 +144,16 @@ identifier ({letter})({letter}|{digit})*
 					strContent[wrt_idx] = '\0';
 					printf("<%s: %s>\n", "string", strContent);
 				}
-                yylval.str_val = strdup(strContent);
+                yylval.str_val = strdup(yytext);
+                int n = strlen(yylval.str_val);
+                for(int i = 0 ;i < n-1; i ++){
+                    if(i != n-2 && yylval.str_val[i] == '\"' && yylval.str_val[i+1] == '\"'){
+                        for(int j = i+1 ;j < n-1 ; j ++)
+                            yylval.str_val[j] = yylval.str_val[j+1];
+                        yylval.str_val[n-1] = '\0';
+                        n--;
+                    }
+                }
 				return STR_CONST;
 			}
 
