@@ -73,7 +73,7 @@ var_declar: VAR identifiers ':' type ';'
 array_type:  type  | ARRAY CONSTANT_INT TO CONSTANT_INT OF array_type;
 func_declars: func_declar func_declars | epsilon ;
 func_declar: ID '(' arguments ')' func_type ';' compound_statement _END ID  ;
-arguments: argument arguments| ';' argument arguments | epsilon ;
+arguments: argument arguments| ',' argument arguments | epsilon ;
 argument: identifiers ':' type
 func_type: ':' type | epsilon;
 identifiers: ID identifiers | ',' ID identifiers  | epsilon  ;
@@ -94,9 +94,9 @@ var_: '[' expr ']' var_ | epsilon ;
 function_call: ID '(' exprs ')';                       /* function call */
 exprs: expr exprs | ',' expr exprs | epsilon ;
 /* expr: operand | expr binary_operator expr | '(' expr ')'; */
-expr: unary_operator expr | operand expr_ | '(' expr ')' expr_; 
+expr: operand expr_ | '(' expr ')' expr_; 
 expr_: binary_operator expr | epsilon;
-operand:  var | function_call | CONSTANT_INT | CONSTANT_REAL | TRUE | FALSE;
+operand: unary_operator operand %prec UMINUS | var | function_call | CONSTANT_INT | CONSTANT_REAL | TRUE | FALSE;
 unary_operator: '-' | NOT;
 binary_operator: '+' | '-' | '*' | '/' | MOD | SMALLER | SMALLER_EQUAL;
 binary_operator: EQUAL | NOT_EQUAL | GREATER_EQUAL | GREATER | AND | OR;
