@@ -1,0 +1,219 @@
+==32477== Memcheck, a memory error detector
+==32477== Copyright (C) 2002-2017, and GNU GPL'd, by Julian Seward et al.
+==32477== Using Valgrind-3.13.0 and LibVEX; rerun with -h for copyright info
+==32477== Command: ./parser project3_examples/Examples/basic.p
+==32477== 
+1: //&T-
+2: basic;
+3: 
+4: // scaler type
+5: var a,b,c : integer;
+<Error> found in Line 6: symbol c is redeclared
+6: var c : boolean;
+7: var d : string;
+8: var r : real;
+9: 
+10: //array type
+11: var e,ee : array 1 to 10 of integer;
+12: var f : array 1 to 5 of array 1 to 5 of array 100 to 101 of integer;
+13: 
+14: //Constant
+15: var g,gg : 10;
+16: var h : "Gimme Gimme Gimme!!";
+17: var i : true;
+18: var j : 2.56;
+19: var k : 111.111E-3;
+20: var l : 0777;    // note octal
+21: 
+22: fun();
+23: begin
+==============================================================================================================
+Name                             Kind       Level      Type             Attribute  
+--------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------
+24: end
+25: end fun
+26: 
+27: fun2( a,b:integer; c:string ): integer;
+28: begin
+==============================================================================================================
+Name                             Kind       Level      Type             Attribute  
+--------------------------------------------------------------------------------------------------------------
+a                                parameter  1(local)   integer          
+b                                parameter  1(local)   integer          
+c                                parameter  1(local)   string           
+--------------------------------------------------------------------------------------------------------------
+29: end
+30: end fun2
+31: 
+32: fun3( a:array 1 to 10 of boolean ) : array 11 to 20 of real;
+33: begin
+==============================================================================================================
+Name                             Kind       Level      Type             Attribute  
+--------------------------------------------------------------------------------------------------------------
+a                                parameter  1(local)   boolean [10]     
+--------------------------------------------------------------------------------------------------------------
+34: end
+35: end fun3
+36: 
+37: //&D-
+38: begin
+39:     var noDump: string;
+40: end
+41: //&D+
+==============================================================================================================
+Name                             Kind       Level      Type             Attribute  
+--------------------------------------------------------------------------------------------------------------
+basic                            program    0(global)  void             
+a                                variable   0(global)  integer          
+b                                variable   0(global)  integer          
+c                                variable   0(global)  integer          
+d                                variable   0(global)  string           
+r                                variable   0(global)  real             
+e                                variable   0(global)  integer [10]     
+ee                               variable   0(global)  integer [10]     
+f                                variable   0(global)  integer [5][5][2]
+g                                constant   0(global)  integer          10         
+gg                               constant   0(global)  integer          10         
+h                                constant   0(global)  string           "Gimme Gimme Gimme!!"
+i                                constant   0(global)  boolean          true       
+j                                constant   0(global)  real             2.560000   
+k                                constant   0(global)  real             0.111111   
+l                                constant   0(global)  integer          511        
+fun                              function   0(global)  void                        
+fun2                             function   0(global)  integer          integer, integer, string
+fun3                             function   0(global)  real [10]        boolean [10]
+--------------------------------------------------------------------------------------------------------------
+42: end basic
+==32477== 
+==32477== HEAP SUMMARY:
+==32477==     in use at exit: 18,776 bytes in 121 blocks
+==32477==   total heap usage: 196 allocs, 75 frees, 112,090 bytes allocated
+==32477== 
+==32477== 6 bytes in 1 blocks are definitely lost in loss record 2 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x1108D0: Symbol::Symbol(char const*, NodeType, TypeNode*, AttrNode*) (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10B6F1: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 7 bytes in 3 blocks are definitely lost in loss record 3 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x1108D0: Symbol::Symbol(char const*, NodeType, TypeNode*, AttrNode*) (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10B926: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 8 bytes in 4 blocks are definitely lost in loss record 6 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x1108D0: Symbol::Symbol(char const*, NodeType, TypeNode*, AttrNode*) (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10BF00: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 14 bytes in 3 blocks are definitely lost in loss record 7 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x1108D0: Symbol::Symbol(char const*, NodeType, TypeNode*, AttrNode*) (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10BE25: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 15 bytes in 7 blocks are definitely lost in loss record 8 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x1108D0: Symbol::Symbol(char const*, NodeType, TypeNode*, AttrNode*) (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10BA8D: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 19 bytes in 7 blocks are definitely lost in loss record 13 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x1108D0: Symbol::Symbol(char const*, NodeType, TypeNode*, AttrNode*) (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10B7FB: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 22 bytes in 1 blocks are definitely lost in loss record 15 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x10E6B6: yylex (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10B3C0: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 32 bytes in 1 blocks are definitely lost in loss record 21 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10B6BA: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 32 bytes in 1 blocks are definitely lost in loss record 22 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10BF61: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 32 bytes in 1 blocks are definitely lost in loss record 23 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10C05A: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 64 bytes in 2 blocks are definitely lost in loss record 25 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10C0CC: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 64 bytes in 2 blocks are definitely lost in loss record 26 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10C0F2: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 64 bytes in 2 blocks are definitely lost in loss record 27 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10C0A6: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 83 bytes in 28 blocks are definitely lost in loss record 28 of 40
+==32477==    at 0x4C2CE5F: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x59AB26A: strdup (in /usr/lib/libc-2.26.so)
+==32477==    by 0x10E36F: yylex (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x10B3C0: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 128 bytes in 4 blocks are definitely lost in loss record 33 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10C080: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 174 (56 direct, 118 indirect) bytes in 7 blocks are definitely lost in loss record 34 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10BA1E: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 224 bytes in 7 blocks are definitely lost in loss record 35 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10BA44: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 232 (160 direct, 72 indirect) bytes in 5 blocks are definitely lost in loss record 36 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10C118: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 240 (24 direct, 216 indirect) bytes in 3 blocks are definitely lost in loss record 37 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10BDE1: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== 300 (64 direct, 236 indirect) bytes in 2 blocks are definitely lost in loss record 38 of 40
+==32477==    at 0x4C2D52F: operator new(unsigned long) (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==32477==    by 0x10BFB9: yyparse() (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477==    by 0x11067E: main (in /net/cs/104/0416304/course/Compiler/hw3/parser)
+==32477== 
+==32477== LEAK SUMMARY:
+==32477==    definitely lost: 1,118 bytes in 91 blocks
+==32477==    indirectly lost: 642 bytes in 25 blocks
+==32477==      possibly lost: 0 bytes in 0 blocks
+==32477==    still reachable: 17,016 bytes in 5 blocks
+==32477==         suppressed: 0 bytes in 0 blocks
+==32477== Reachable blocks (those to which a pointer was found) are not shown.
+==32477== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==32477== 
+==32477== For counts of detected and suppressed errors, rerun with: -v
+==32477== ERROR SUMMARY: 20 errors from 20 contexts (suppressed: 0 from 0)

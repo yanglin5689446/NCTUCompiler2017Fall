@@ -1,0 +1,10 @@
+#!/bin/bash
+files=(basic error test)
+make
+
+for file in $files; do
+    ./parser project3_examples/Examples/$file.p > temp
+    diff -Z temp project3_examples/Answers/$file.txt
+done
+
+make clean

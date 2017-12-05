@@ -7,6 +7,7 @@
 
 #include <string.h>
 #include <math.h>
+#include "cpp.h"
 #include "y.tab.h"
 
 #define LIST strcat( buf, yytext )

@@ -1,6 +1,6 @@
 TARGET   = parser
 OBJECT   = lex.yy.c y.tab.c y.output parser y.tab.h semantic.o
-CC       = gcc
+CC       = g++
 CFLAGS   = -Wall -Wextra -pedantic -g3 
 LEX      = flex
 YACC     = yacc -v -t

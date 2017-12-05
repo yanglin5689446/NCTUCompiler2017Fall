@@ -2,45 +2,126 @@
 #ifndef SEMANTIC_H
 #define SEMANTIC_H
 
-#include "nodedef.h"
+#include <vector>
+#include <string>
 
-#define INITIAL_LEVEL_SIZE      5
-#define INITIAL_SYMBOL_COUNT    50
-#define INITIAL_ID_LIST_SIZE    5
-#define INITIAL_ARRAY_SIZE      5
-#define INITIAL_PARAMS_SIZE     4
+enum ScopeType: int{
+    DEFAULT_SCOPE,
+    GLOBAL_SCOPE,
+    FUNCTION_SCOPE,
+    LOOP_SCOPE
+};
 
-typedef struct Block{
-    int size;
-    int __max_size;
-    Symbol* symbols;
-} Block;
+enum NodeType : int{ 
+    T_PROGRAM,
+    T_VOID,
+    T_STRING, 
+    T_REAL,
+    T_INTEGER, 
+    T_BOOLEAN, 
+    T_FUNCTION,
+    T_PARAMS,
+    T_PARAM,
+    T_VAR,
+    T_CONST_VAR,
+    T_ARRAY,
+    T_LOOP_VAR
+} ;
 
-// a symbol table is a list containing several blocks,
-// each blocks has some of the entry
-struct SymbolTable{
-    int __max_level;
-    int level;
-    Block* levels;
-} symbol_table;
+typedef struct ConstValue{
+    ConstValue();
+    ConstValue(NodeType type, void* value);
+    NodeType type;
+    union {
+        float real_value;
+        int int_value;
+        char* str_value;
+        bool bool_value;
+    } value;
+} ConstValue;
 
-void symbol_table_init() ;
-void symbol_table_new_scope() ;
-void symbol_table_delete_scope() ;
-void symbol_table_insert(Symbol*) ;
-void symbol_table_global(Symbol*) ;
+typedef struct Dimension{ 
+    Dimension();
+    Dimension(int lb, int ub);
+    int lower_bound, upper_bound, size; 
+}Dimension;
 
-void id_list_insert(IDList*, const char*);
-IDList* id_list_create();
+typedef struct TypeNode{
+    TypeNode();
+    TypeNode(NodeType type);
+    // array constructor
+    TypeNode(TypeNode* type, int lower_bound, int upper_bound); 
+    NodeType type;
+    std::vector<Dimension> dimensions;
+} TypeNode;
 
-void param_list_extend(ParamList*, ParamList*);
-void param_list_insert(ParamList*, Param*);
-ParamList* param_list_create();
+typedef struct IDList{
+    IDList();
+    IDList(const char* id);
+    NodeType type;
+    void insert(const char* id);
+    std::vector<std::string> ids;
+} IDList;
 
-bool check_redeclar(char*);
-Symbol* symbol(const char*, NodeType, TypeNode*, AttrNode*);
-Param* param(const char*, NodeType, TypeNode*);
-RValueNode* rvalue_node(NodeType type, void* value);
-TypeNode* type_node(NodeType);
-TypeNode* array_type_node(TypeNode*, int, int);
+typedef struct Param{
+    Param();
+    Param(const char* name, NodeType node_type, TypeNode* type);
+    char* name;
+    NodeType node_type;
+    TypeNode *type;
+} Param; 
+
+struct ParamList{
+    ParamList();
+    ParamList(IDList* id_list, TypeNode* type);
+    void extend(ParamList* param_list);
+    void insert(Param* param);
+    NodeType type;
+    std::vector<Param> params;
+};
+typedef struct FuncAttr{
+    FuncAttr();
+    FuncAttr(TypeNode* return_type, ParamList* param_list);
+    TypeNode *return_type;
+    std::vector<Param> params;
+} FuncAttr;
+
+union AttrNode{
+    AttrNode();
+    AttrNode(ConstValue* rvalue);
+    AttrNode(FuncAttr* func_attr);
+    FuncAttr *func_attr;
+    ConstValue *rvalue;
+};
+
+struct Symbol{
+    Symbol();
+    Symbol(const char* name, NodeType node_type, TypeNode* type, AttrNode* attr);
+    char* name;
+    NodeType node_type;
+    TypeNode *type;
+    AttrNode *attr;
+};
+
+typedef std::vector<Symbol> Scope;
+
+class SymbolTable{
+public:
+    SymbolTable();
+    void dump_symbols();
+    void new_scope(int sope_type = DEFAULT_SCOPE);
+    void delete_scope(bool dump = false);
+    void insert(Symbol symbol, bool global = false);
+    bool has_been_declared(char*);
+private:
+    std::vector<Scope> scopes;
+    // used to store previous scope type
+    int __scope; 
+};
+
+const char* stringify(NodeType node_type);
+const char* stringify(TypeNode type);
+const char* stringify(std::vector<Param>& params);
+const char* stringify(ConstValue& const_value);
+
 #endif

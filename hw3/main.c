@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-extern void symbol_table_init();
 extern int yyparse();	/* declared by yacc */
 extern FILE* yyin;	/* declared by lex */
 
@@ -24,8 +23,6 @@ int  main( int argc, char **argv )
 		exit(-1);
 	}
 	
-    symbol_table_init();
-
 	yyin = fp;
 	yyparse();	/* primary procedure of parser */
 	

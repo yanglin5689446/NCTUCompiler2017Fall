@@ -2,201 +2,173 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "nodedef.h"
+#include <string>
+#include <utility>
 #include "semantic.h"
 
-void symbol_table_new_scope(){
-    symbol_table.level ++;
-    if( symbol_table.level == symbol_table.__max_level){
-        symbol_table.__max_level *= 2;
-        Block *temp = (Block*)malloc(sizeof(Block) * symbol_table.__max_level);
-        memcpy(temp, symbol_table.levels, sizeof(Block) * symbol_table.level);
-        free(symbol_table.levels);
-        symbol_table.levels = temp;
-    }
-    Block *level_ref = symbol_table.levels + symbol_table.level;
-    level_ref = (Block*)malloc(sizeof(Block));
-}
+extern int linenum;
 
-void symbol_table_delete_scope(){
-    symbol_table.levels[symbol_table.level].size = 0;
-    symbol_table.level --;
-}
+const static std::string __type_names[] = { 
+    "program", "void", "string", "real", "integer","boolean", "function", "", 
+    "parameter", "variable", "constant", "variable", "loop_variable" 
+};
 
-void symbol_table_init(){
-    int i;
-    symbol_table.level = 0;
-    symbol_table.__max_level = INITIAL_LEVEL_SIZE;
-    symbol_table.levels = (Block*)malloc(sizeof(Block) * INITIAL_LEVEL_SIZE);
-    for(i = 0 ;i < INITIAL_LEVEL_SIZE; i ++){
-        symbol_table.levels[i].size = 0;
-        symbol_table.levels[i].__max_size = INITIAL_SYMBOL_COUNT;
-        symbol_table.levels[i].symbols = (Symbol*)malloc(sizeof(Symbol) * INITIAL_SYMBOL_COUNT);
+ConstValue::ConstValue() = default;
+ConstValue::ConstValue(NodeType type, void* value) : type(type){
+    switch(type){
+        case T_INTEGER:
+            this->value.int_value = *(int*)value;
+            delete (int*)value;
+            break;
+        case T_REAL:
+            this->value.real_value = *(float*)value;
+            delete (float*)value;
+            break;
+        case T_STRING:
+            this->value.str_value = strdup((char*)value);
+            break;
+        case T_BOOLEAN:
+            this->value.bool_value = *(bool*)value;
+            delete (bool*)value;
+            break;
     }
 }
 
-void symbol_table_global(Symbol *symbol){
-    int m = symbol_table.levels[0].size;
-    symbol_table.levels[0].symbols[m] = *symbol;
-    symbol_table.levels[0].size ++;
-    if(symbol_table.levels[0].size == symbol_table.levels[0].__max_size){
-        symbol_table.levels[0].__max_size *= 2;
-        Symbol *temp = (Symbol*)malloc(sizeof(Symbol) * symbol_table.levels[0].__max_size);
-        memcpy(temp, symbol_table.levels[0].symbols, sizeof(Symbol) * symbol_table.levels[0].size);
-        free(symbol_table.levels[0].symbols);
-        symbol_table.levels[0].symbols = temp;
+Dimension::Dimension() = default;
+Dimension::Dimension(int lb, int ub) : lower_bound(lb), upper_bound(ub), size(ub - lb + 1) {}
+
+TypeNode::TypeNode() = default;
+TypeNode::TypeNode(NodeType type) : type(type) {}
+TypeNode::TypeNode(TypeNode* inherit, int lb, int ub) : type(inherit->type), dimensions(std::move(inherit->dimensions)){
+    dimensions.push_back(Dimension(lb, ub));
+};
+
+Symbol::Symbol() = default;
+Symbol::Symbol(char const* name, NodeType node_type, TypeNode* type, AttrNode* attr) 
+        : name(strdup(name)), node_type(node_type), type(type), attr(attr) {}
+
+SymbolTable::SymbolTable(){ scopes.push_back(Scope()); };
+void SymbolTable::dump_symbols(){
+    for(int i=0;i< 110;i++) printf("=");
+    printf("\n");
+    printf("%-33s%-11s%-11s%-17s%-11s\n", "Name", "Kind", "Level", "Type", "Attribute");
+    for(int i=0;i< 110;i++) printf("-");
+    printf("\n");
+    int level = scopes.size() - 1;
+    for(auto &symbol: scopes[level]){
+        if(symbol.node_type == T_LOOP_VAR)continue;
+        printf("%-33s", symbol.name);
+        printf("%-11s", stringify(symbol.node_type));
+        printf("%d%-10s", level, level ? "(local)" : "(global)");
+        printf("%-17s", symbol.type ? stringify(*symbol.type) : "");
+        // attribute;
+        if(symbol.node_type == T_FUNCTION) printf("%-11s", stringify(symbol.attr->func_attr->params));
+        else if(symbol.node_type == T_CONST_VAR) printf("%-11s", stringify(*symbol.attr->rvalue));
+        printf("\n");
     }
-    free(symbol);
+    
+    for(int i=0;i< 110;i++) printf("-");
+    printf("\n");
 }
-
-void symbol_table_insert(Symbol *symbol){
-    int n = symbol_table.level;
-    int m = symbol_table.levels[n].size;
-    symbol_table.levels[n].symbols[m] = *symbol;
-    symbol_table.levels[n].size ++;
-    if(symbol_table.levels[n].size == symbol_table.levels[n].__max_size){
-        symbol_table.levels[n].__max_size *= 2;
-        Symbol *temp = (Symbol*)malloc(sizeof(Symbol) * symbol_table.levels[n].__max_size);
-        memcpy(temp, symbol_table.levels[n].symbols, sizeof(Symbol) * symbol_table.levels[n].size);
-        free(symbol_table.levels[n].symbols);
-        symbol_table.levels[n].symbols = temp;
+void SymbolTable::insert(Symbol symbol, bool global){
+    if( ! has_been_declared(symbol.name)){
+        if(global)scopes[0].push_back(symbol);
+        else scopes[scopes.size() - 1].push_back(symbol);
     }
-    free(symbol);
+    else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, symbol.name);
 }
-
-void id_list_insert(IDList* id_list, const char* name){
-    id_list->id_nodes[id_list->size].id = strdup(name);
-    id_list->size ++;
-    if(id_list->size == id_list->__max_size){
-        id_list->__max_size *= 2;
-        IDNode *temp = (IDNode*)malloc(sizeof(IDNode) * id_list->__max_size);
-        memcpy(temp, id_list->id_nodes, sizeof(IDNode) * id_list->size);
-        free(id_list->id_nodes);
-        id_list->id_nodes = temp;
-    }
-}
-
-
-IDList* id_list_create(){
-    IDList *id_list = (IDList*)malloc(sizeof(IDList));
-    id_list->__max_size = INITIAL_ID_LIST_SIZE;
-    id_list->size = 0;
-    id_list->id_nodes = (IDNode*)malloc(sizeof(IDNode) * INITIAL_ID_LIST_SIZE);
-    return id_list;
-}
-
-void param_list_extend(ParamList* first_list, ParamList* second_list){
-    if(first_list->size + second_list->size >= first_list->__max_size){
-        first_list->__max_size = first_list->__max_size + second_list->__max_size;
-        Param *temp = (Param*)malloc(sizeof(Param) * first_list->__max_size);
-        memcpy(temp, first_list->params, sizeof(Param) * first_list->size);
-        memcpy(temp + first_list->size, second_list->params, sizeof(Param) * second_list->size);
-        free(first_list->params);
-        first_list->params = temp;
-    }
-    else memcpy(first_list->params + first_list->size, second_list->params, sizeof(Param) * second_list->size);
-    first_list->size += second_list->size;
-    free(second_list->params);
-    free(second_list);
-}
-void param_list_insert(ParamList* param_list, Param* param){
-    param_list->params[param_list->size] = *param;
-    param_list->size ++;
-    free(param);
-    if(param_list->size == param_list->__max_size){
-        param_list->__max_size *= 2;
-        Param *temp = (Param*)malloc(sizeof(Param) * param_list->__max_size);
-        memcpy(temp, param_list->params, sizeof(Param) * param_list->size);
-        free(param_list->params);
-        param_list->params = temp;
-    }
-
-}
-ParamList* param_list_create(){
-    ParamList* param_list = (ParamList*)malloc(sizeof(ParamList));
-    *param_list = (ParamList){ 
-        .type = T_PARAMS, 
-        .size = 0, 
-        .__max_size = INITIAL_PARAMS_SIZE, 
-        .params = (Param*)malloc(sizeof(Param) * INITIAL_PARAMS_SIZE)
-    };
-    return param_list;
-}
-
-bool check_redeclar(char* id){
-    int n = symbol_table.level;
-    int m = symbol_table.levels[n].size;
-    for(int i = 0 ;i < m ; i ++)
-        if(!strcmp(id, symbol_table.levels[n].symbols[i].name))return true;
-    for(int i = 0 ;i < n ; i ++){
-        for(int j = 0 ;j < symbol_table.levels[i].size ; j ++){
-            Symbol *symbol = symbol_table.levels[i].symbols + j;
-            if(symbol->node_type == T_LOOP_VAR && !strcmp(id, symbol->name))return true;
-        }
-    }
+bool SymbolTable::has_been_declared(char* id){
+    // first check current scope
+    Scope &current_scope = scopes[scopes.size() - 1];
+    for(auto &symbol: current_scope)
+        if( !strcmp(id, symbol.name) )return true;
+    // then check loop_vars in all scopes
+    for(auto& scope: scopes)
+        for(auto& symbol: scope)
+            if(symbol.node_type == T_LOOP_VAR && !strcmp(id, symbol.name))return true;
     return false;
 }
 
-Symbol* symbol(const char* name, NodeType kind, TypeNode *type, AttrNode* attr){
-    Symbol* s = (Symbol*)malloc(sizeof(Symbol));
-    *s = (Symbol){ .name = strdup(name), .node_type = kind, .type = type, .attr = attr };
-    return s;
+
+AttrNode::AttrNode() = default;
+AttrNode::AttrNode(ConstValue* rvalue) : rvalue(rvalue) {}
+AttrNode::AttrNode(FuncAttr* func_attr) : func_attr(func_attr) {}
+
+void SymbolTable::new_scope(int scope_type){ 
+    if(!__scope)scopes.push_back(Scope()); 
+    else __scope = 0;
+    // function scope is a special case
+    if(scope_type == FUNCTION_SCOPE)__scope = 1;
 }
-Param* param(const char* name, NodeType kind, TypeNode* type){
-    Param* s = (Param*)malloc(sizeof(Param));
-    *s = (Param){ .name = strdup(name), .node_type = kind, .type = type };
-    return s;
+void SymbolTable::delete_scope(bool dump){
+    if(dump)dump_symbols();
+    scopes.pop_back();
 }
 
-RValueNode* rvalue_node(NodeType type, void* value){
-    RValueNode *node = (RValueNode*)malloc(sizeof(RValueNode));
-    node->type = type;
-    switch(type){
-        case T_INTEGER:
-            node->value.int_value = *(int*)value;
-            break;
-        case T_REAL:
-            node->value.real_value = *(float*)value;
-            break;
-        case T_STRING:
-            node->value.str_value = strdup((char*)value);
-            break;
-        case T_BOOLEAN:
-            node->value.bool_value = *(bool*)value;
-            break;
+Param::Param() = default;
+Param::Param(const char* name, NodeType node_type, TypeNode* type) 
+     : name(strdup(name)), node_type(node_type), type(type) {}
+
+ParamList::ParamList() = default;
+ParamList::ParamList(IDList* id_list, TypeNode* type){
+    for(auto &id: id_list->ids)
+        params.push_back(Param(id.c_str(), type->dimensions.size() ? T_ARRAY: T_VAR, type));
+    delete id_list;
+}
+void ParamList::extend(ParamList* param_list){
+    for(auto &param: param_list->params)params.push_back(param);
+    delete param_list;
+}
+
+FuncAttr::FuncAttr() = default;
+FuncAttr::FuncAttr(TypeNode* return_type, ParamList* param_list) {
+    for(auto &param: param_list->params)params.push_back(param);
+}
+
+IDList::IDList() = default;
+IDList::IDList(const char *id){ insert(id); }
+void IDList::insert(const char* id){ ids.push_back(std::string(id)); }
+
+const char* stringify(NodeType node_type){ return __type_names[node_type].c_str(); }
+const char* stringify(TypeNode type){
+    static std::string result;
+    result = __type_names[type.type];
+    if(type.dimensions.size()){
+        result += ' ';
+        for(auto dim = type.dimensions.rbegin(); dim != type.dimensions.rend() ; dim ++){
+            result += '[';
+            result += std::to_string(dim->size);
+            result += ']';
+        }
     }
-    return node;
+    return result.c_str();
 }
-
-TypeNode* type_node(NodeType type){
-    TypeNode *node = (TypeNode*)malloc(sizeof(TypeNode));
-    *node = (TypeNode){ .type = type, .dims = 0, .__max_dims = INITIAL_ARRAY_SIZE, .dim_nodes = NULL };
-    return node;
-}
-
-TypeNode* array_type_node(TypeNode* inherit, int low, int high){
-    TypeNode *node = (TypeNode*)malloc(sizeof(TypeNode));
-    *node = (TypeNode){ 
-        .type = inherit->type, 
-        .dims = inherit->dims, 
-        .__max_dims = inherit->__max_dims, 
-        .dim_nodes = (inherit->dims 
-                     ? inherit->dim_nodes 
-                     : (ArrayDimNode*)malloc(sizeof(ArrayDimNode) * inherit->__max_dims))
-    };
-    node->dim_nodes[node->dims] = (ArrayDimNode){ 
-        .lower_bound = low, 
-        .upper_bound = high,
-        .size = high - low + 1
-    };
-    node->dims ++;
-    if(node->dims == node->__max_dims){
-        node->__max_dims *= 2;
-        ArrayDimNode *temp = (ArrayDimNode*)malloc(sizeof(ArrayDimNode) * node->__max_dims);
-        memcpy(temp, node->dim_nodes, sizeof(ArrayDimNode) * node->dims);
-        free(node->dim_nodes);
-        node->dim_nodes = temp;
+const char* stringify(std::vector<Param>& params){
+    static std::string result;
+    result = "";
+    bool first = true;
+    for(auto &param: params){
+        if(first)first = false;
+        else result += ", ";
+        result += stringify(*param.type);
     }
-    free(inherit);
-    return node;
+    return result.c_str();
+}
+const char* stringify(ConstValue& const_value){
+    static std::string result;
+    switch(const_value.type){
+        case T_INTEGER: 
+            result = std::to_string(const_value.value.int_value);
+            break;
+        case T_REAL: 
+            result = std::to_string(const_value.value.real_value);
+            break;
+        case T_STRING: 
+            result = const_value.value.str_value;
+            break;
+        case T_BOOLEAN: 
+            result = const_value.value.bool_value ? "true" : "false";
+            break;
+   } 
+   return result.c_str();
 }
