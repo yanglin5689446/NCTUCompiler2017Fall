@@ -14,7 +14,7 @@ const static std::string __type_names[] = {
 };
 
 ConstValue::ConstValue() = default;
-ConstValue::ConstValue(NodeType type, void* value) : type(type){
+ConstValue::ConstValue(NodeType type, void *value) : type(type){
     switch(type){
         case T_INTEGER:
             this->value.int_value = *(int*)value;
@@ -39,15 +39,20 @@ Dimension::Dimension(int lb, int ub) : lower_bound(lb), upper_bound(ub), size(ub
 
 TypeNode::TypeNode() = default;
 TypeNode::TypeNode(NodeType type) : type(type) {}
-TypeNode::TypeNode(TypeNode* inherit, int lb, int ub) : type(inherit->type), dimensions(std::move(inherit->dimensions)){
+TypeNode::TypeNode(TypeNode *inherit, int lb, int ub) : type(inherit->type), dimensions(std::move(inherit->dimensions)){
     dimensions.push_back(Dimension(lb, ub));
-};
+    delete inherit;
+}
+
+AttrNode::AttrNode() = default;
+AttrNode::AttrNode(ConstValue *const_value) : const_value(const_value) {}
+AttrNode::AttrNode(ParamList *param_list) : param_list(param_list) {}
 
 Symbol::Symbol() = default;
-Symbol::Symbol(char const* name, NodeType node_type, TypeNode* type, AttrNode* attr) 
+Symbol::Symbol(const char *name, NodeType node_type, TypeNode *type, AttrNode *attr) 
         : name(strdup(name)), node_type(node_type), type(type), attr(attr) {}
 
-SymbolTable::SymbolTable(){ scopes.push_back(Scope()); };
+SymbolTable::SymbolTable(){ scopes.push_back(Scope()); }
 void SymbolTable::dump_symbols(){
     for(int i=0;i< 110;i++) printf("=");
     printf("\n");
@@ -62,8 +67,8 @@ void SymbolTable::dump_symbols(){
         printf("%d%-10s", level, level ? "(local)" : "(global)");
         printf("%-17s", symbol.type ? stringify(*symbol.type) : "");
         // attribute;
-        if(symbol.node_type == T_FUNCTION) printf("%-11s", stringify(symbol.attr->func_attr->params));
-        else if(symbol.node_type == T_CONST_VAR) printf("%-11s", stringify(*symbol.attr->rvalue));
+        if(symbol.node_type == T_FUNCTION) printf("%-11s", stringify(symbol.attr->param_list->params));
+        else if(symbol.node_type == T_CONST_VAR) printf("%-11s", stringify(*symbol.attr->const_value));
         printf("\n");
     }
     
@@ -71,13 +76,13 @@ void SymbolTable::dump_symbols(){
     printf("\n");
 }
 void SymbolTable::insert(Symbol symbol, bool global){
-    if( ! has_been_declared(symbol.name)){
+    if( !has_been_declared(symbol.name)){
         if(global)scopes[0].push_back(symbol);
         else scopes[scopes.size() - 1].push_back(symbol);
     }
     else printf("<Error> found in Line %d: symbol %s is redeclared\n", linenum, symbol.name);
 }
-bool SymbolTable::has_been_declared(char* id){
+bool SymbolTable::has_been_declared(char *id){
     // first check current scope
     Scope &current_scope = scopes[scopes.size() - 1];
     for(auto &symbol: current_scope)
@@ -88,11 +93,6 @@ bool SymbolTable::has_been_declared(char* id){
             if(symbol.node_type == T_LOOP_VAR && !strcmp(id, symbol.name))return true;
     return false;
 }
-
-
-AttrNode::AttrNode() = default;
-AttrNode::AttrNode(ConstValue* rvalue) : rvalue(rvalue) {}
-AttrNode::AttrNode(FuncAttr* func_attr) : func_attr(func_attr) {}
 
 void SymbolTable::new_scope(int scope_type){ 
     if(!__scope)scopes.push_back(Scope()); 
@@ -106,28 +106,23 @@ void SymbolTable::delete_scope(bool dump){
 }
 
 Param::Param() = default;
-Param::Param(const char* name, NodeType node_type, TypeNode* type) 
+Param::Param(const char *name, NodeType node_type, TypeNode *type) 
      : name(strdup(name)), node_type(node_type), type(type) {}
 
 ParamList::ParamList() = default;
-ParamList::ParamList(IDList* id_list, TypeNode* type){
+ParamList::ParamList(IDList *id_list, TypeNode *type){
     for(auto &id: id_list->ids)
         params.push_back(Param(id.c_str(), type->dimensions.size() ? T_ARRAY: T_VAR, type));
     delete id_list;
 }
-void ParamList::extend(ParamList* param_list){
+void ParamList::extend(ParamList *param_list){
     for(auto &param: param_list->params)params.push_back(param);
     delete param_list;
 }
 
-FuncAttr::FuncAttr() = default;
-FuncAttr::FuncAttr(TypeNode* return_type, ParamList* param_list) {
-    for(auto &param: param_list->params)params.push_back(param);
-}
-
 IDList::IDList() = default;
 IDList::IDList(const char *id){ insert(id); }
-void IDList::insert(const char* id){ ids.push_back(std::string(id)); }
+void IDList::insert(const char *id){ ids.push_back(std::string(id)); }
 
 const char* stringify(NodeType node_type){ return __type_names[node_type].c_str(); }
 const char* stringify(TypeNode type){

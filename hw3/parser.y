@@ -29,7 +29,6 @@ SymbolTable symbol_table;
     struct IDList *id_list;
     struct TypeNode *type;
     struct ConstValue *rvalue;
-    struct FuncNode *func;
     struct ParamList *params;
     struct ExprList *expr;
     struct ExprNode *exprs;
@@ -49,10 +48,9 @@ SymbolTable symbol_table;
 %token<real_val> SCIENTIFIC 
 %token<str_val> STR_CONST
 
-%type<type> type scalar_type array_type opt_type 
+%type<type> type scalar_type array_type opt_type  
 %type<id_list> id_list
 %type<rvalue> literal_const
-%type<func> func_decl
 %type<params> param param_list opt_param_list
 %type<int_val> int_const
 
@@ -60,7 +58,7 @@ SymbolTable symbol_table;
 %start program
 %%
 
-program		: ID { symbol_table.insert(Symbol($1, T_PROGRAM ,new TypeNode(T_VOID), NULL)); } MK_SEMICOLON 
+program		: ID { symbol_table.insert(Symbol($1, T_PROGRAM ,new TypeNode(T_VOID))); } MK_SEMICOLON 
             program_body
             END ID { if(Opt_D)symbol_table.dump_symbols(); }
 			;
@@ -77,11 +75,11 @@ decl_list	: decl_list decl
 			;
 
 decl		: VAR id_list MK_COLON scalar_type MK_SEMICOLON { 
-                for(auto& id: $2->ids)symbol_table.insert(Symbol(id.c_str(), T_VAR, $4, NULL)); 
+                for(auto& id: $2->ids)symbol_table.insert(Symbol(id.c_str(), T_VAR, $4)); 
                 delete $2;
             } 
             | VAR id_list MK_COLON array_type MK_SEMICOLON { 
-                for(auto& id: $2->ids)symbol_table.insert(Symbol(id.c_str(), T_ARRAY , $4, NULL)); 
+                for(auto& id: $2->ids)symbol_table.insert(Symbol(id.c_str(), T_ARRAY , $4)); 
                 delete $2;
             }
             | VAR id_list MK_COLON literal_const MK_SEMICOLON { 
@@ -115,9 +113,8 @@ func_decl_list		: func_decl_list func_decl
 
 func_decl	: ID { symbol_table.new_scope(FUNCTION_SCOPE); } MK_LPAREN opt_param_list MK_RPAREN 
             opt_type MK_SEMICOLON { 
-                symbol_table.insert(Symbol($1, T_FUNCTION, $6, new AttrNode(new FuncAttr($6, $4))), GLOBAL_SCOPE); 
-                for(auto &param: $4->params)
-                    symbol_table.insert(Symbol(param.name, T_PARAM, param.type, NULL)); 
+                symbol_table.insert(Symbol($1, T_FUNCTION, $6, new AttrNode($4)), GLOBAL_SCOPE); 
+                for(auto &param: $4->params) symbol_table.insert(Symbol(param.name, T_PARAM, param.type)); 
             } 
 			compound_stmt 
 			END ID { /* check $1 $12 equal */ } 
@@ -202,7 +199,7 @@ for_stmt	: FOR ID OP_ASSIGN int_const TO int_const {
             DO opt_stmt_list END DO { symbol_table.delete_scope(false); }
 			;
 
-return_stmt		: RETURN boolean_expr MK_SEMICOLON
+return_stmt	: RETURN boolean_expr MK_SEMICOLON
 			;
 
 opt_boolean_expr_list	: boolean_expr_list
@@ -270,8 +267,5 @@ var_ref		: ID
 dim			: MK_LB boolean_expr MK_RB ;
 
 %%
-
-int yyerror( const char *msg ){
-	exit(-1);
-}
+int yyerror( const char *msg ){ exit(-1); }
 

@@ -1,7 +1,7 @@
 TARGET   = parser
 OBJECT   = lex.yy.c y.tab.c y.output parser y.tab.h semantic.o
 CC       = g++
-CFLAGS   = -Wall -Wextra -pedantic -g3 
+CFLAGS   = -pedantic -g3 
 LEX      = flex
 YACC     = yacc -v -t
 YACCFLAG = -d
@@ -10,7 +10,7 @@ LIBS     = -lfl -lm
 all: $(TARGET)
 	
 $(TARGET): y.tab.c lex.yy.c main.c semantic.c
-	$(CC) $^ -o $(TARGET) $(CCFLAGS) $(LIBS)
+	$(CC) $^ -o $(TARGET) $(CFLAGS) $(LIBS)
 
 %.o: %.c
 	$(CC) -c $< 
