@@ -4,10 +4,12 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 
 extern int yyparse();	/* declared by yacc */
 extern FILE* yyin;	/* declared by lex */
+extern char *filename;
 
 int  main( int argc, char **argv )
 {
@@ -17,6 +19,13 @@ int  main( int argc, char **argv )
 	}
 
 	FILE *fp = fopen( argv[1], "r" );
+    filename = strtok(argv[1], "/");
+    char *s = filename;
+    while(s){
+        filename = s;
+        s = strtok(NULL, "/");
+    }
+    filename = strtok(filename, ".");
 
 	if( fp == NULL )  {
 		fprintf( stdout, "Open  file  error\n" );

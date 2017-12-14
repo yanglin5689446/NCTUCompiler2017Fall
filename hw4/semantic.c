@@ -209,8 +209,6 @@ Symbol* SymbolTable::find(const char* name){
     for(auto &symbol: scopes[0])
         if( !strcmp(name, symbol.name) )return &symbol;
     // not found;
-    string message = string("symbol \'") + name + "\' used before declared.";
-    yyerror(message.c_str());
     return NULL;
 }
 bool SymbolTable::has_been_declared(char *name){
@@ -307,7 +305,7 @@ bool verify_assignable(VarRef* var_ref, ConstValue* value){
 }
 NodeType coercion(NodeType a, NodeType b){
     if(a == b)return a;
-    else if(a == T_INTEGER && b == T_REAL) return T_REAL;
+    else if(a == T_REAL && b == T_INTEGER) return T_REAL;
     return T_VOID;
 }
 

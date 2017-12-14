@@ -17,6 +17,7 @@ extern FILE *yyin;		/* declared by lex */
 extern char *yytext;		/* declared by lex */
 extern char buf[256];		/* declared in lex.l */
 extern int yylex(void);
+char *filename;
 int yyerror(const char* );
 int Opt_D = 1;
 
@@ -66,11 +67,15 @@ SymbolTable symbol_table;
 %start program
 %%
 
-program		: ID { symbol_table.insert(Symbol($1, T_PROGRAM ,new TypeNode(T_VOID))); } MK_SEMICOLON 
+program		: ID { 
+                symbol_table.insert(Symbol($1, T_PROGRAM ,new TypeNode(T_VOID))); 
+                if(strcmp($1, filename))yyerror("program beginning ID inconsist with file name");
+            } MK_SEMICOLON 
             program_body
             END ID { 
                 if(Opt_D)symbol_table.dump_symbols(); 
                 if(strcmp($1, $6))yyerror("program end ID inconsist with the beginning ID");
+                if(strcmp($6, filename))yyerror("program end ID inconsist with file name");
             }
 			;
 
@@ -124,8 +129,11 @@ func_decl_list		: func_decl_list func_decl
 
 func_decl	: ID { symbol_table.new_scope(FUNCTION_SCOPE); } MK_LPAREN opt_param_list MK_RPAREN 
             opt_type MK_SEMICOLON { 
-                symbol_table.insert(Symbol($1, T_FUNCTION, $6, new AttrNode($4)), GLOBAL_SCOPE); 
-                for(auto &param: $4->params) symbol_table.insert(Symbol(param.name, T_PARAM, param.type)); 
+                if($6->dimensions.size())yyerror("a function cannot return an array type");
+                else{
+                    symbol_table.insert(Symbol($1, T_FUNCTION, $6, new AttrNode($4)), GLOBAL_SCOPE); 
+                    for(auto &param: $4->params) symbol_table.insert(Symbol(param.name, T_PARAM, param.type)); 
+                }
             } 
 			compound_stmt 
 			END ID { if(strcmp($1, $11))yyerror("function end ID inconsist with the beginning ID"); } 
@@ -191,10 +199,7 @@ stmt_list	: stmt_list stmt
 			;
 
 simple_stmt	: var_ref OP_ASSIGN boolean_expr MK_SEMICOLON{
-                if(!$1->symbol){
-                    string message = "wrong variable reference";
-                    yyerror(message.c_str());
-                }
+                if(!$1->symbol){}
                 else if($1->symbol->node_type == T_CONST_VAR || $1 ->symbol->node_type == T_LOOP_VAR){
                     string message = $1->symbol->node_type == T_CONST_VAR ? string("constant \'") : string("loop_var ");
                     message += $1->symbol->name;
@@ -211,10 +216,10 @@ simple_stmt	: var_ref OP_ASSIGN boolean_expr MK_SEMICOLON{
 proc_call_stmt		: ID MK_LPAREN opt_boolean_expr_list MK_RPAREN MK_SEMICOLON{
                 Symbol *func = symbol_table.find($1);
                 if(!func){
-                    string message = string($1) + ": no such symbol";
+                    string message = string("symbol \'") + $1 + "\' not found";
                     yyerror(message.c_str());
                 }
-                verify_function_call(func, $3);
+                else verify_function_call(func, $3);
             }
 			;
 
@@ -235,7 +240,10 @@ for_stmt	: FOR ID OP_ASSIGN int_const TO int_const {
             DO opt_stmt_list END DO 
 			;
 
-return_stmt	: RETURN boolean_expr MK_SEMICOLON
+return_stmt	: RETURN boolean_expr MK_SEMICOLON{
+                // TODO: rewrite expression and complete this
+                yyerror("a function cannot return an array type");
+            }
 			;
 
 opt_boolean_expr_list	: boolean_expr_list { $$ = $1; } 
@@ -339,21 +347,27 @@ factor		: var_ref { $$ = $1->get_value(); }
 			| ID MK_LPAREN opt_boolean_expr_list MK_RPAREN { 
                 Symbol *func = symbol_table.find($1); 
                 if(!func){
-                    string message = string($1) + ": no such symbol";
+                    string message = string("symbol \'") + $1 + "\' not found";
                     yyerror(message.c_str());
+                    $$ = new ConstValue(T_VOID, NULL);
                 }
-                verify_function_call(func, $3);
-                $$ = new ConstValue(func->type->type, NULL);
+                else {
+                    verify_function_call(func, $3);
+                    $$ = new ConstValue(func->type->type, NULL);
+                }
                 
             }
 			| OP_SUB ID MK_LPAREN opt_boolean_expr_list MK_RPAREN { 
                 Symbol *func = symbol_table.find($2); 
                 if(!func){
-                    string message = string($2) + ": no such symbol";
+                    string message = string("symbol \'") + $2 + "\' not found";
                     yyerror(message.c_str());
+                    $$ = new ConstValue(T_VOID, NULL);
                 }
-                verify_function_call(func, $4);
-                $$ = new ConstValue(func->type->type, NULL);
+                else {
+                    verify_function_call(func, $4);
+                    $$ = new ConstValue(func->type->type, NULL);
+                }
             }
 			| literal_const { $$ = $1; }
 			;
