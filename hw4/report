@@ -1,0 +1,5 @@
+hw3
+==
+
+The parser can generate a symbole table and check any variable redeclaration. 
+it can parser variable, function, parameter in different scope.
