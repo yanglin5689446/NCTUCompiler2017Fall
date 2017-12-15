@@ -20,6 +20,7 @@ extern int yylex(void);
 char *filename;
 int yyerror(const char* );
 int Opt_D = 1;
+bool in_func = false;
 
 SymbolTable symbol_table;
 %}
@@ -35,7 +36,7 @@ SymbolTable symbol_table;
     struct ConstValue *rvalue;
     struct VarRef *var_ref;
     struct ParamList *params;
-    struct ConstValue *expr;
+    struct Expr *expr;
     struct ExprList *expr_list;
 }
 
@@ -127,16 +128,16 @@ func_decl_list		: func_decl_list func_decl
 			| func_decl
 			;
 
-func_decl	: ID { symbol_table.new_scope(FUNCTION_SCOPE); } MK_LPAREN opt_param_list MK_RPAREN 
-            opt_type MK_SEMICOLON { 
-                if($6->dimensions.size())yyerror("a function cannot return an array type");
+func_decl	: ID { symbol_table.new_scope(FUNCTION_SCOPE); } MK_LPAREN opt_param_list MK_RPAREN opt_type MK_SEMICOLON { 
+                if($6->dimensions.size()) yyerror("a function cannot return an array type");
                 else{
                     symbol_table.insert(Symbol($1, T_FUNCTION, $6, new AttrNode($4)), GLOBAL_SCOPE); 
                     for(auto &param: $4->params) symbol_table.insert(Symbol(param.name, T_PARAM, param.type)); 
                 }
+                in_func = true;
             } 
 			compound_stmt 
-			END ID { if(strcmp($1, $11))yyerror("function end ID inconsist with the beginning ID"); } 
+			END ID { if(strcmp($1, $11))yyerror("function end ID inconsist with the beginning ID"); in_func = false; } 
 			;
 
 opt_param_list		: param_list { $$ = $1; }
@@ -199,15 +200,21 @@ stmt_list	: stmt_list stmt
 			;
 
 simple_stmt	: var_ref OP_ASSIGN boolean_expr MK_SEMICOLON{
-                if(!$1->symbol){}
-                else if($1->symbol->node_type == T_CONST_VAR || $1 ->symbol->node_type == T_LOOP_VAR){
-                    string message = $1->symbol->node_type == T_CONST_VAR ? string("constant \'") : string("loop_var ");
-                    message += $1->symbol->name;
-                    message += "\' cannot be assigned";
-                    yyerror(message.c_str());
+                if($1->symbol){
+                    if($1->addr.size() > $1->symbol->type->dimensions.size()){
+                        string message = string("\'") + $1->symbol->name + "\' is "
+                                + to_string($1->symbol->type->dimensions.size()) + 
+                                " dimension(s), but reference in " + to_string($1->addr.size()) + " dimension(s)"; 
+                        yyerror(message.c_str());
+                    }
+                    if($1->symbol->node_type == T_CONST_VAR || $1 ->symbol->node_type == T_LOOP_VAR){
+                        string message = $1->symbol->node_type == T_CONST_VAR ? string("constant \'") : string("loop_var ");
+                        message += $1->symbol->name;
+                        message += "\' cannot be assigned";
+                        yyerror(message.c_str());
+                    }
+                    else verify_assignable($1, $3);
                 }
-                else verify_assignable($1, $3);
-                
             }
 			| PRINT boolean_expr MK_SEMICOLON
 			| READ boolean_expr MK_SEMICOLON
@@ -241,8 +248,12 @@ for_stmt	: FOR ID OP_ASSIGN int_const TO int_const {
 			;
 
 return_stmt	: RETURN boolean_expr MK_SEMICOLON{
-                // TODO: rewrite expression and complete this
-                yyerror("a function cannot return an array type");
+                if(!in_func)yyerror("can\'t return in non-function block");
+                if($2->is_ref && $2->ref.var_ref->symbol){
+                    int n = $2->ref.var_ref->symbol->type->dimensions.size();
+                    int m = $2->ref.var_ref->addr.size();
+                    if(n != m)yyerror("return dimension number mismatch");
+                }
             }
 			;
 
@@ -254,20 +265,20 @@ boolean_expr_list	: boolean_expr_list MK_COMMA boolean_expr { $$->exprs.push_bac
 			| boolean_expr { $$ = new ExprList(); $$->exprs.push_back(*$1); }
 			;
 
-boolean_expr: boolean_expr OP_OR boolean_term { $$ = new ConstValue; *$$ = *$1 || *$3; }
+boolean_expr: boolean_expr OP_OR boolean_term { $$ = new Expr; *$$ = *$1 || *$3; }
 			| boolean_term { $$ = $1; } 
 			;
 
-boolean_term: boolean_term OP_AND boolean_factor { $$ = new ConstValue;  *$$ = *$1 && *$3; }
+boolean_term: boolean_term OP_AND boolean_factor { $$ = new Expr;  *$$ = *$1 && *$3; }
 			| boolean_factor { $$ = $1; }
 			;
 
-boolean_factor		: OP_NOT boolean_factor { $$ = new ConstValue;  *$$ = !(*$2); } 
+boolean_factor		: OP_NOT boolean_factor { $$ = new Expr;  *$$ = !(*$2); } 
 			| relop_expr { $$ = $1; }
 			;
 
 relop_expr	: expr rel_op expr { 
-                $$ = new ConstValue; 
+                $$ = new Expr; 
                 switch($2){
                     case OP_LT: 
                         *$$ = *$1 < *$3;
@@ -301,7 +312,7 @@ rel_op		: OP_LT
 			;
 
 expr		: expr add_op term { 
-                $$ = new ConstValue; 
+                $$ = new Expr; 
                 switch($2){
                     case OP_ADD:
                         *$$ = *$1 + *$3;
@@ -319,7 +330,7 @@ add_op		: OP_ADD
 			;
 
 term		: term mul_op factor { 
-                $$ = new ConstValue; 
+                $$ = new Expr; 
                 switch($2){
                     case OP_MUL:
                         *$$ = *$1 * *$3;
@@ -340,8 +351,24 @@ mul_op		: OP_MUL
 			| OP_MOD
 			;
 
-factor		: var_ref { $$ = $1->get_value(); }
-			| OP_SUB var_ref { $$ = $2->get_value(); }
+factor		: var_ref { 
+                if($1->symbol && $1->addr.size() > $1->symbol->type->dimensions.size()){
+                    string message = string("\'") + $1->symbol->name + "\' is "
+                            + to_string($1->symbol->type->dimensions.size()) + 
+                            " dimension(s), but reference in " + to_string($1->addr.size()) + " dimension(s)"; 
+                    yyerror(message.c_str());
+                }
+                $$ = new Expr($1); 
+            }
+			| OP_SUB var_ref {
+                if($2->symbol && $2->addr.size() > $2->symbol->type->dimensions.size()){
+                    string message = string("\'") + $2->symbol->name + "\' is "
+                            + to_string($2->symbol->type->dimensions.size()) + 
+                            " dimension(s), but reference in " + to_string($2->addr.size()) + " dimension(s)"; 
+                    yyerror(message.c_str());
+                }
+                $$ = new Expr($2); 
+            }
 			| MK_LPAREN boolean_expr MK_RPAREN { $$ = $2; }
 			| OP_SUB MK_LPAREN boolean_expr MK_RPAREN { $$ = $3; }
 			| ID MK_LPAREN opt_boolean_expr_list MK_RPAREN { 
@@ -349,11 +376,11 @@ factor		: var_ref { $$ = $1->get_value(); }
                 if(!func){
                     string message = string("symbol \'") + $1 + "\' not found";
                     yyerror(message.c_str());
-                    $$ = new ConstValue(T_VOID, NULL);
+                    $$ = new Expr(T_VOID);
                 }
                 else {
                     verify_function_call(func, $3);
-                    $$ = new ConstValue(func->type->type, NULL);
+                    $$ = new Expr(func->type->type);
                 }
                 
             }
@@ -362,14 +389,14 @@ factor		: var_ref { $$ = $1->get_value(); }
                 if(!func){
                     string message = string("symbol \'") + $2 + "\' not found";
                     yyerror(message.c_str());
-                    $$ = new ConstValue(T_VOID, NULL);
+                    $$ = new Expr(T_VOID);
                 }
                 else {
                     verify_function_call(func, $4);
-                    $$ = new ConstValue(func->type->type, NULL);
+                    $$ = new Expr(func->type->type);
                 }
             }
-			| literal_const { $$ = $1; }
+			| literal_const { $$ = new Expr($1); }
 			;
 
 var_ref		: ID { $$ = new VarRef(symbol_table.find($1)); }
@@ -377,7 +404,10 @@ var_ref		: ID { $$ = new VarRef(symbol_table.find($1)); }
 			;
 
 dim			: MK_LB boolean_expr MK_RB { 
-                if($2->type == T_INTEGER)$$ = $2->value.int_value; 
+                if($2->get_type() == T_INTEGER){
+                    if($2->is_ref)$$ = $2->ref.var_ref->get_value()->value.int_value; 
+                    else $$ = $2->ref.const_value->value.int_value; 
+                }
                 else yyerror("array address should be integer");
             };
 

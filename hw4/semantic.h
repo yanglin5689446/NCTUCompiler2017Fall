@@ -13,7 +13,7 @@ enum ScopeType: int{
 enum NodeType : int{ 
     T_VOID,     T_PROGRAM,  T_STRING,   T_REAL,     T_INTEGER,  
     T_BOOLEAN,  T_FUNCTION, T_PARAMS,   T_PARAM,    T_VAR,
-    T_CONST_VAR,T_ARRAY,    T_LOOP_VAR, T_OPERATOR
+    T_CONST_VAR,T_ARRAY,    T_LOOP_VAR, T_OPERATOR, T_EXPR
 } ;
 
 enum OperatorType: int{
@@ -24,22 +24,7 @@ enum OperatorType: int{
 
 struct ConstValue{
     ConstValue();
-    ConstValue(NodeType type, void *value);
-    const ConstValue operator *= (int factor);
-    const ConstValue operator && (ConstValue& operand);
-    const ConstValue operator || (ConstValue& operand);
-    const ConstValue operator ! ();
-    const ConstValue operator + (ConstValue& operand);
-    const ConstValue operator - (ConstValue& operand);
-    const ConstValue operator * (ConstValue& operand);
-    const ConstValue operator / (ConstValue& operand);
-    const ConstValue operator % (ConstValue& operand);
-    const ConstValue operator > (ConstValue& operand);
-    const ConstValue operator >= (ConstValue& operand);
-    const ConstValue operator == (ConstValue& operand);
-    const ConstValue operator <= (ConstValue& operand);
-    const ConstValue operator < (ConstValue& operand);
-    const ConstValue operator != (ConstValue& operand);
+    ConstValue(NodeType type, void *value = NULL);
 
     NodeType type;
     union {
@@ -48,9 +33,6 @@ struct ConstValue{
         char *str_value;
         bool bool_value;
     } value;
-private:
-    const ConstValue __arithmetic(ConstValue& operand, float (*op)(float, float));
-    const ConstValue __compare(ConstValue& operand, bool (*op)(float, float));
 };
 
 typedef struct Dimension{ 
@@ -109,8 +91,6 @@ struct Symbol{
     AttrNode *attr;
 };
 
-struct ExprList{ vector<ConstValue> exprs; };
-
 struct VarRef{
     VarRef();
     VarRef(Symbol* symbol);
@@ -120,6 +100,38 @@ struct VarRef{
     vector<int> addr;
 };
 
+struct Expr{
+    Expr();
+    Expr(ConstValue* const_value);
+    Expr(NodeType type, void* value = NULL);
+    Expr(VarRef* var_ref);
+    const Expr operator *= (int factor);
+    const Expr operator && (Expr& operand);
+    const Expr operator || (Expr& operand);
+    const Expr operator ! ();
+    const Expr operator + (Expr& operand);
+    const Expr operator - (Expr& operand);
+    const Expr operator * (Expr& operand);
+    const Expr operator / (Expr& operand);
+    const Expr operator % (Expr& operand);
+    const Expr operator > (Expr& operand);
+    const Expr operator >= (Expr& operand);
+    const Expr operator == (Expr& operand);
+    const Expr operator <= (Expr& operand);
+    const Expr operator < (Expr& operand);
+    const Expr operator != (Expr& operand);
+    const NodeType get_type();
+    union{
+        VarRef *var_ref;
+        ConstValue* const_value;
+    }ref;
+    bool is_ref;
+private:
+    const Expr __arithmetic(Expr& operand);
+    const Expr __compare(Expr& operand);
+};
+
+struct ExprList{ vector<Expr> exprs; };
 typedef vector<Symbol> Scope;
 
 class SymbolTable{
@@ -142,8 +154,9 @@ private:
 *******************************/
 
 
+bool verify_type(TypeNode a, Expr b);
 bool verify_function_call(Symbol* func, ExprList* args);
-bool verify_assignable(VarRef* var_ref, ConstValue* value);
+bool verify_assignable(VarRef* var_ref, Expr* expr);
 NodeType coercion(NodeType a, NodeType b);
 const char* stringify(NodeType node_type);
 const char* stringify(TypeNode type);

@@ -45,87 +45,6 @@ ConstValue::ConstValue(NodeType type, void *value) : type(type){
             break;
     }
 }
-const ConstValue ConstValue::__arithmetic(ConstValue& operand, float (*op)(float, float)){
-    static ConstValue result;
-    result = ConstValue(T_VOID, NULL);
-    if (coercion(type, operand.type) == T_INTEGER) 
-        result.type = T_INTEGER;
-    else if (coercion(type, operand.type) == T_REAL || coercion(operand.type, type) == T_REAL)
-        result.type = T_REAL;
-    return result; 
-}
-const ConstValue ConstValue::__compare(ConstValue& operand, bool (*op)(float, float)){
-    static ConstValue result;
-    result = ConstValue(T_VOID, NULL);
-    if (coercion(type, operand.type) == T_INTEGER || 
-        coercion(type, operand.type) == T_REAL || 
-        coercion(operand.type, type) == T_REAL)
-        result.type = T_BOOLEAN;
-    return result; 
-}
-const ConstValue ConstValue::operator *= (int factor){
-    // currently do nothing
-    switch(this->type){
-        case T_INTEGER: 
-            break;
-        case T_REAL: 
-            break;
-    }
-}
-
-const ConstValue ConstValue::operator && (ConstValue& operand){
-    // TODO: type check
-    return ConstValue(T_BOOLEAN, new bool(this->value.bool_value && operand.value.bool_value));
-}
-const ConstValue ConstValue::operator || (ConstValue& operand){
-    // TODO: type check
-    return ConstValue(T_BOOLEAN, new bool(this->value.bool_value || operand.value.bool_value));
-}
-const ConstValue ConstValue::operator ! (){
-    // TODO: type check
-    return ConstValue(T_BOOLEAN, new bool(!this->value.bool_value));
-}
-const ConstValue ConstValue::operator + (ConstValue& operand){
-    if((type == T_INTEGER || type == T_REAL) && (operand.type == T_INTEGER || operand.type == T_REAL))
-        return __arithmetic(operand, [](float a, float b){ return a + b; });
-    else if(type == T_STRING && operand.type == T_STRING){
-        string s = string(value.str_value) + operand.value.str_value;
-        return ConstValue(T_STRING, (void*)s.c_str());
-    }
-    return ConstValue(T_VOID, NULL);
-}
-const ConstValue ConstValue::operator - (ConstValue& operand){
-    return __arithmetic(operand, [](float a, float b){ return a - b; });
-}
-const ConstValue ConstValue::operator * (ConstValue& operand){
-    return __arithmetic(operand, [](float a, float b){ return a * b; });
-}
-const ConstValue ConstValue::operator / (ConstValue& operand){
-    return __arithmetic(operand, [](float a, float b){ return a / b; });
-}
-const ConstValue ConstValue::operator % (ConstValue& operand){
-    if (type == T_INTEGER && operand.type == T_INTEGER)
-        return ConstValue(T_INTEGER, new int(0));
-    return ConstValue(T_VOID, NULL);
-}
-const ConstValue ConstValue::operator > (ConstValue& operand){
-    return __compare(operand, [](float a, float b){ return a > b; });;
-}
-const ConstValue ConstValue::operator >= (ConstValue& operand){
-    return __compare(operand, [](float a, float b){ return a >= b; });;
-}
-const ConstValue ConstValue::operator == (ConstValue& operand){
-    return __compare(operand, [](float a, float b){ return a == b; });;
-}
-const ConstValue ConstValue::operator <= (ConstValue& operand){
-    return __compare(operand, [](float a, float b){ return a <= b; });;
-}
-const ConstValue ConstValue::operator < (ConstValue& operand){
-    return __compare(operand, [](float a, float b){ return a < b; });;
-}
-const ConstValue ConstValue::operator != (ConstValue& operand){
-    return __compare(operand, [](float a, float b){ return a != b; });;
-}
 
 Dimension::Dimension() = default;
 Dimension::Dimension(int lb, int ub) : lower_bound(lb), upper_bound(ub), size(ub - lb + 1) {}
@@ -156,11 +75,131 @@ ConstValue* VarRef::get_value(){
             case T_STRING: return new ConstValue(T_STRING, new char(0));
         }
     }
-    return new ConstValue(T_VOID, NULL); 
+    return new ConstValue(T_VOID); 
 }
 NodeType VarRef::get_type(){ 
     if(symbol)return symbol->type->type;
     return T_VOID; 
+}
+
+Expr::Expr() = default;
+Expr::Expr(ConstValue *const_value) : is_ref(false) { ref.const_value = const_value; }
+Expr::Expr(NodeType type, void* value) :is_ref(false) { ref.const_value = new ConstValue(type, value); }
+Expr::Expr(VarRef *var_ref) :is_ref(true) { ref.var_ref = var_ref; }
+const Expr Expr::__arithmetic(Expr& operand){
+    static Expr result;
+    result = Expr(T_VOID, NULL);
+    if (coercion(get_type(), operand.get_type()) == T_INTEGER){
+        if(this->is_ref) return *this;
+        else if(operand.is_ref) return operand;
+    }
+    else if(coercion(get_type(), operand.get_type()) == T_REAL || coercion(operand.get_type(), get_type()) == T_REAL){
+        if(this->is_ref) {
+            Symbol *s = this->ref.var_ref->symbol;
+            s = new Symbol(s->name, s->node_type, new TypeNode(T_REAL));
+            s->type->dimensions = this->ref.var_ref->symbol->type->dimensions;
+            result = *this;
+            result.ref.var_ref->symbol = s;
+        }
+        else if(operand.is_ref) {
+            Symbol *s = operand.ref.var_ref->symbol;
+            s = new Symbol(s->name, s->node_type, new TypeNode(T_REAL));
+            s->type->dimensions = operand.ref.var_ref->symbol->type->dimensions;
+            s->type->type = T_REAL;
+            result = operand;
+            result.ref.var_ref->symbol = s;
+        }
+        else result.ref.const_value->type = T_REAL;
+    }
+    return result; 
+}
+const Expr Expr::__compare(Expr& operand){
+    static Expr result;
+    result = Expr(T_VOID);
+    if (coercion(get_type(), operand.get_type()) == T_INTEGER || 
+        coercion(get_type(), operand.get_type()) == T_REAL || 
+        coercion(operand.get_type(), get_type()) == T_REAL)
+        result.ref.const_value->type = T_BOOLEAN;
+    return result; 
+}
+const Expr Expr::operator *= (int factor){
+    // currently do nothing
+    switch(this->get_type()){
+        case T_INTEGER: 
+            break;
+        case T_REAL: 
+            break;
+    }
+}
+const Expr Expr::operator && (Expr& operand){
+    NodeType a = get_type();
+    NodeType b = operand.get_type();
+    if(a == T_STRING || b == T_STRING || (!coercion(a, b) && !coercion(a, b)))yyerror("imcomparable type");
+    return Expr(T_BOOLEAN);
+}
+const Expr Expr::operator || (Expr& operand){
+    NodeType a = get_type();
+    NodeType b = operand.get_type();
+    if(a == T_STRING || b == T_STRING || (!coercion(a, b) && !coercion(a, b)))yyerror("imcomparable type");
+    return Expr(T_BOOLEAN);
+}
+const Expr Expr::operator! (){
+    if(get_type() != T_BOOLEAN)yyerror("imcomparable type");
+    return Expr(T_BOOLEAN);
+}
+const Expr Expr::operator + (Expr& operand){
+    if((get_type() == T_INTEGER || get_type() == T_REAL) && (operand.get_type() == T_INTEGER || operand.get_type() == T_REAL))
+        return __arithmetic(operand);
+    else if(get_type() == T_STRING && operand.get_type() == T_STRING){
+        if(this->is_ref)return *this;
+        else if(operand.is_ref)return operand;
+    }
+    return Expr(T_VOID);
+}
+const Expr Expr::operator - (Expr& operand){
+    return __arithmetic(operand);
+}
+const Expr Expr::operator * (Expr& operand){
+    return __arithmetic(operand);
+}
+const Expr Expr::operator / (Expr& operand){
+    return __arithmetic(operand);
+}
+const Expr Expr::operator % (Expr& operand){
+    if (get_type() == T_INTEGER && operand.get_type() == T_INTEGER){
+        if(this->is_ref)return *this;
+        else if(operand.is_ref)return operand;
+        else return Expr(T_INTEGER);
+    }
+    return Expr(T_VOID);
+}
+const Expr Expr::operator > (Expr& operand){
+    return __compare(operand);
+}
+const Expr Expr::operator >= (Expr& operand){
+    return __compare(operand);
+}
+const Expr Expr::operator == (Expr& operand){
+    return __compare(operand);
+}
+const Expr Expr::operator <= (Expr& operand){
+    return __compare(operand);
+}
+const Expr Expr::operator < (Expr& operand){
+    return __compare(operand);
+}
+const Expr Expr::operator != (Expr& operand){
+    return __compare(operand);
+}
+const NodeType Expr::get_type(){
+    if(is_ref){
+        if(ref.var_ref) return ref.var_ref->get_type();
+        else return T_VOID;
+    } 
+    else {
+        if(ref.const_value) return ref.const_value->type;
+        else return T_VOID;
+    }
 }
 
 SymbolTable::SymbolTable(){ scopes.push_back(Scope()); }
@@ -257,6 +296,20 @@ void IDList::insert(const char *id){ ids.push_back(string(id)); }
 *       Helper functions       *
 *******************************/
 
+bool verify_type(TypeNode a, Expr b){
+    if(a.type != b.get_type()) return false;
+    else if(b.is_ref){
+        int dim_b = b.ref.var_ref->symbol->type->dimensions.size() - b.ref.var_ref->addr.size();
+        if(a.dimensions.size() != dim_b)return false;
+        else 
+            for(int i = dim_b - 1 ; i < a.dimensions.size() ;i ++)
+                if(a.dimensions[i].size != b.ref.var_ref->symbol->type->dimensions[i].size)
+                    return false;
+        
+    }
+    return true;
+}
+
 bool verify_function_call(Symbol* func, ExprList* args){
     if(args){
         if(func->attr->param_list->params.size() > args->exprs.size()){
@@ -272,10 +325,10 @@ bool verify_function_call(Symbol* func, ExprList* args){
         else {
             bool ok = true;
             for(int i = 0 ;i < func->attr->param_list->params.size() ; i ++){
-                if(func->attr->param_list->params[i].type->type != args->exprs[i].type){
-                    ok = false;
-                    break;
-                }
+                TypeNode func_param = *(func->attr->param_list->params[i].type);
+                Expr arg = args->exprs[i];
+                ok = verify_type(func_param, arg);
+                if(!ok)break;
             }
             if(!ok){
                 yyerror("parameter type mismatch");
@@ -290,13 +343,68 @@ bool verify_function_call(Symbol* func, ExprList* args){
     }
     return true;
 }
-bool verify_assignable(VarRef* var_ref, ConstValue* value){
+bool verify_assignable(VarRef* var_ref, Expr* value){
     if(!var_ref || !value )return false;
-    if(var_ref->get_type() != value->type){
-        NodeType type = coercion(var_ref->get_type(), value->type);
+    int a_dim = 0, b_dim = 0;
+    a_dim = var_ref->symbol->type->dimensions.size() - var_ref->addr.size();
+    if(value->is_ref)b_dim = value->ref.var_ref->symbol->type->dimensions.size() - value->ref.var_ref->addr.size();
+    if(var_ref->get_type() != value->get_type()){
+        NodeType type = coercion(var_ref->get_type(), value->get_type());
         if(!type){
             string message = string("type mismatch, LHS= ") + __type_names[var_ref->get_type()];
-            message += string(", RHS= ") + __type_names[value->type];
+            if(a_dim > 0){
+                message += ' ';
+                int k = var_ref->symbol->type->dimensions.size();
+                for(int i = k - a_dim ;i < k ; i ++) 
+                    message += string("[") + to_string(var_ref->symbol->type->dimensions[i].size) + ']';
+            }
+            message += string(", RHS= ") + __type_names[value->get_type()];
+            if(b_dim > 0){
+                message += ' ';
+                int k = value->ref.var_ref->symbol->type->dimensions.size(); 
+                for(int i = k - b_dim ;i < k ; i ++) 
+                    message += string("[") + to_string(value->ref.var_ref->symbol->type->dimensions[i].size) + ']';
+            }
+            yyerror(message.c_str());
+            return false;
+        }
+        else{
+            if(a_dim != b_dim){
+                string message = string("type mismatch, LHS= ") + __type_names[var_ref->get_type()];
+                if(a_dim > 0){
+                    message += ' ';
+                    int k = var_ref->symbol->type->dimensions.size();
+                    for(int i = k - a_dim ;i < k ; i ++) 
+                        message += string("[") + to_string(var_ref->symbol->type->dimensions[i].size) + ']';
+                }
+                message += string(", RHS= ") + __type_names[value->get_type()];
+                if(b_dim > 0){
+                    message += ' ';
+                    int k = value->ref.var_ref->symbol->type->dimensions.size(); 
+                    for(int i = k - b_dim ;i < k ; i ++) 
+                        message += string("[") + to_string(value->ref.var_ref->symbol->type->dimensions[i].size) + ']';
+                }
+                yyerror(message.c_str());
+                return false;
+            }
+        }
+    }
+    else {
+        if(a_dim != b_dim){
+            string message = string("type mismatch, LHS= ") + __type_names[var_ref->get_type()];
+            if(a_dim > 0){
+                message += ' ';
+                int k = var_ref->symbol->type->dimensions.size();
+                for(int i = k - a_dim ;i < k ; i ++) 
+                    message += string("[") + to_string(var_ref->symbol->type->dimensions[i].size) + ']';
+            }
+            message += string(", RHS= ") + __type_names[value->get_type()];
+            if(b_dim > 0){
+                message += ' ';
+                int k = value->ref.var_ref->symbol->type->dimensions.size(); 
+                for(int i = k - b_dim ;i < k ; i ++) 
+                    message += string("[") + to_string(value->ref.var_ref->symbol->type->dimensions[i].size) + ']';
+            }
             yyerror(message.c_str());
             return false;
         }
