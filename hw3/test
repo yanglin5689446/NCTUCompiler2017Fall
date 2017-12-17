@@ -1,10 +1,10 @@
 #!/bin/bash
-files=(basic error test)
+files=(Array  basicSym  Function  Loopredefined  Redefined)
 make
 
 for file in $files; do
-    ./parser project3_examples/Examples/$file.p > temp
-    diff -Z temp project3_examples/Answers/$file.txt
+    ./parser release/$file.p > temp
+    diff -Z temp testans/$file.txt
 done
 
 make clean

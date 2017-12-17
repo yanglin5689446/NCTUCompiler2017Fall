@@ -192,11 +192,10 @@ while_stmt		: WHILE boolean_expr DO
 			  END DO
 			;
 
-for_stmt	: FOR ID OP_ASSIGN int_const TO int_const {
-                symbol_table.new_scope();
+for_stmt	: FOR ID OP_ASSIGN int_const TO int_const { 
                 symbol_table.insert(Symbol($2, T_LOOP_VAR, new TypeNode(T_INTEGER), NULL));
             }
-            DO opt_stmt_list END DO { symbol_table.delete_scope(false); }
+            DO opt_stmt_list END DO 
 			;
 
 return_stmt	: RETURN boolean_expr MK_SEMICOLON
